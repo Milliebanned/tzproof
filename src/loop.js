@@ -131,7 +131,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
       .filter(f => guardBefore.get(f) !== guardAfter.get(f));
 
     const diff = spawnSync('git', ['diff', '--no-index', '--no-color', before, editDir], { encoding: 'utf8' }).stdout
-      .replaceAll(before, 'a').replaceAll(editDir, 'b');
+      .replaceAll(`a${before}`, 'a').replaceAll(`b${editDir}`, 'b').replaceAll(before, '').replaceAll(editDir, '');
     writeFileSync(join(outDir, `attempt-${n}.diff`), diff);
 
     if (tampered.length) {

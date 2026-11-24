@@ -1,0 +1,390 @@
+{
+  "tool": "tzproof",
+  "startedAt": "2026-11-24T17:40:07.722Z",
+  "finishedAt": "2026-11-24T18:03:09.745Z",
+  "app": "http://127.0.0.1:58786",
+  "clocks": [
+    {
+      "id": "new-york-afternoon",
+      "name": "New York, afternoon",
+      "tz": "America/New_York",
+      "at": "2026-06-15T18:00:00Z"
+    },
+    {
+      "id": "tokyo-morning",
+      "name": "Tokyo, early morning",
+      "tz": "Asia/Tokyo",
+      "at": "2026-06-15T23:30:00Z"
+    },
+    {
+      "id": "los-angeles-evening",
+      "name": "Los Angeles, late evening",
+      "tz": "America/Los_Angeles",
+      "at": "2026-06-16T04:30:00Z"
+    },
+    {
+      "id": "london-bst-midnight",
+      "name": "London, just after midnight (summer time)",
+      "tz": "Europe/London",
+      "at": "2026-04-09T23:30:00Z"
+    },
+    {
+      "id": "month-end",
+      "name": "New York, 31 January",
+      "tz": "America/New_York",
+      "at": "2027-01-31T17:00:00Z"
+    }
+  ],
+  "flows": [
+    {
+      "id": "account",
+      "name": "Account dates"
+    }
+  ],
+  "summary": {
+    "pass": 0,
+    "fail": 3,
+    "unknown": 2
+  },
+  "cells": [
+    {
+      "id": "account@new-york-afternoon",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "new-york-afternoon",
+        "name": "New York, afternoon",
+        "tz": "America/New_York",
+        "at": "2026-06-15T18:00:00Z"
+      },
+      "verdict": "unknown",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-15",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"today\""
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-29",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"trial_end\""
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-15",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"next_invoice\""
+        }
+      ],
+      "objective": "Go to http://127.0.0.1:58786. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'.",
+      "kane": {
+        "exitCode": 1,
+        "status": "failed",
+        "summary": "The requested task was to read and save the text shown next to “Today,” “Trial ends,” and “Next invoice.”\nNo requested values were captured or saved.\nThe run stopped on the page at http://127.0.0.1:58786/ because the browser page closed while a screenshot was being taken, so the relevant labels and their values could not be read.",
+        "credits": null,
+        "duration": 119,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87A9NSQ5SGSSZ5QKJ1FHN6N/dashboard/share/US_4HCC98QCM5WEIT6N5NUU60M78Y7I06AARJRXAT2J24GS8CJHME0ZPURIXQNRIE8G?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/fd310d6a-e09f-4598-8d79-785a48a5b1a7/evidence/12b42e9b-72a5-48a8-b7a3-d4abbe3de6bf.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:58786"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"The text shown next to 'Next invoice' is extracted and "
+          },
+          {
+            "step": 5,
+            "status": "failed",
+            "remark": "agent_info: Screenshot failed: TargetClosedError: screenshot: Target page, context or browse"
+          }
+        ],
+        "ndjson": "cells/account@new-york-afternoon.ndjson"
+      }
+    },
+    {
+      "id": "account@tokyo-morning",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "tokyo-morning",
+        "name": "Tokyo, early morning",
+        "tz": "Asia/Tokyo",
+        "at": "2026-06-15T23:30:00Z"
+      },
+      "verdict": "unknown",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-16",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"today\""
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-30",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"trial_end\""
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-16",
+          "shownRaw": null,
+          "shown": null,
+          "status": "unknown",
+          "reason": "Kane did not record \"next_invoice\""
+        }
+      ],
+      "objective": "Go to http://127.0.0.1:58786. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'.",
+      "kane": {
+        "exitCode": 1,
+        "status": "failed",
+        "summary": "The browser page or its session was closed unexpectedly during screenshot capture.\nCheck the browser runner and session-lifecycle logs to determine why the page closed, then rerun the extraction with the browser kept open until the values are saved.",
+        "credits": null,
+        "duration": 150.6,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87A9NPT16YPV0MF6EW1PGWN/dashboard/share/US_MITDVI4ZX1IHE48CAX7GSONUHLS20NZ1UFHWXD83CNADK4739ZFZSSNGIT9IMFLN?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/1f190758-7073-4ce2-a8d9-805592672626/evidence/af452009-da2e-48d6-ad69-77211c944ad5.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:58786"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(unknown, \"Get the text shown next to 'Next invoice' and save as {{next_i"
+          },
+          {
+            "step": 5,
+            "status": "failed",
+            "remark": "agent_info: Screenshot failed: TargetClosedError: screenshot: Target page, context or browse"
+          }
+        ],
+        "ndjson": "cells/account@tokyo-morning.ndjson"
+      }
+    },
+    {
+      "id": "account@los-angeles-evening",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "los-angeles-evening",
+        "name": "Los Angeles, late evening",
+        "tz": "America/Los_Angeles",
+        "at": "2026-06-16T04:30:00Z"
+      },
+      "verdict": "fail",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-15",
+          "shownRaw": "2026-06-16",
+          "shown": "2026-06-16",
+          "status": "fail",
+          "reason": "shows 2026-06-16, expected 2026-06-15 (+1 day)"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-29",
+          "shownRaw": "June 29, 2026",
+          "shown": "2026-06-29",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-15",
+          "shownRaw": "July 15, 2026",
+          "shown": "2026-07-15",
+          "status": "pass"
+        }
+      ],
+      "objective": "Go to http://127.0.0.1:58786. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'.",
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the account details dates requested.\nToday is 2026-06-16.\nThe trial ends on June 29, 2026.\nThe next invoice date is July 15, 2026.",
+        "credits": null,
+        "duration": 29.9,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87BG1Z2B15NAFZMT10XQH4C/dashboard/share/US_NE7Y5PE0BQVSOJYLE7RFST9ZRFI9OR2OXE7OT09MXQKFJJ2FABJI86I7CAQWPQLC?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/5b737ad1-9bc7-4cb9-b690-d419acff6da4/evidence/486ce325-922d-4e61-9dfa-be68c4c64d83.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:58786"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"the text shown next to 'Next invoice' is stored as {{ne"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "wait: Waiting after all required account values have been verified"
+          }
+        ],
+        "ndjson": "cells/account@los-angeles-evening.ndjson"
+      }
+    },
+    {
+      "id": "account@london-bst-midnight",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "london-bst-midnight",
+        "name": "London, just after midnight (summer time)",
+        "tz": "Europe/London",
+        "at": "2026-04-09T23:30:00Z"
+      },
+      "verdict": "fail",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-04-10",
+          "shownRaw": "2026-04-09",
+          "shown": "2026-04-09",
+          "status": "fail",
+          "reason": "shows 2026-04-09, expected 2026-04-10 (-1 day)"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-04-24",
+          "shownRaw": "April 24, 2026",
+          "shown": "2026-04-24",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-05-10",
+          "shownRaw": "May 10, 2026",
+          "shown": "2026-05-10",
+          "status": "pass"
+        }
+      ],
+      "objective": "Go to http://127.0.0.1:58786. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'.",
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the dates shown for Today, Trial ends, and Next invoice.\nToday was 2026-04-09, the trial ends April 24, 2026, and the next invoice is May 10, 2026.\nCompleted the requested date lookup successfully.",
+        "credits": null,
+        "duration": 37.6,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87BH0BFZN410WTX4WZX8DYF/dashboard/share/US_TD0GY12CNCK4M7MI1ZX8G1QPJRWSZAN3NXKPL39HL33C4Z1ISUBZB3LWCTXCYAE4?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/66615241-35cc-4cbe-a9f7-9f1d619006f1/evidence/17140429-68c8-4eca-8bf2-22974ef48e17.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:58786"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"The text shown next to 'Next invoice' is saved as {{nex"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "wait: Waiting after all required account detail values have been extracted"
+          }
+        ],
+        "ndjson": "cells/account@london-bst-midnight.ndjson"
+      }
+    },
+    {
+      "id": "account@month-end",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "month-end",
+        "name": "New York, 31 January",
+        "tz": "America/New_York",
+        "at": "2027-01-31T17:00:00Z"
+      },
+      "verdict": "fail",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2027-01-31",
+          "shownRaw": "2027-01-31",
+          "shown": "2027-01-31",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2027-02-14",
+          "shownRaw": "February 14, 2027",
+          "shown": "2027-02-14",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2027-02-28",
+          "shownRaw": "March 3, 2027",
+          "shown": "2027-03-03",
+          "status": "fail",
+          "reason": "shows 2027-03-03, expected 2027-02-28 (+3 days)"
+        }
+      ],
+      "objective": "Go to http://127.0.0.1:58786. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'.",
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the account details dates requested from the page.\nToday was listed as 2027-01-31.\nThe trial end date was February 14, 2027.\nThe next invoice date was March 3, 2027.",
+        "credits": null,
+        "duration": 33.5,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87BHZ76617J89KBZMHJHWMY/dashboard/share/US_W9MDP398366PZV1SWJR5P3IHUQWZQ5841QN5UCD2BIMSK28JTAMINOM40GZTGQW0?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/11691644-c7b6-4744-9d5a-669fef334688/evidence/c5c0da83-37a3-4ff7-966c-4b7c3a052123.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:58786"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"The text shown next to 'Next invoice' is saved as {{nex"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "wait: Waiting after all account detail extractions have been verified"
+          }
+        ],
+        "ndjson": "cells/account@month-end.ndjson"
+      }
+    }
+  ]
+}

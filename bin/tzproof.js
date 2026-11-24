@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { renderReport } from '../src/report.js';
+import { runStopHook } from '../src/hook.js';
 import { runLoop } from '../src/loop.js';
 import { loadConfig, planCells, runGrid } from '../src/runner.js';
 
@@ -10,6 +11,7 @@ const HELP = `tzproof — test your web app at every clock and time zone with Ka
 Usage:
   tzproof run [config]      Run every flow at every clock (default config: tzproof.yaml)
   tzproof fix [config]      Run, hand failures to your coding agent, re-run the whole grid; repeat until green
+  tzproof hook [config]     Claude Code Stop hook: block "done" while any cell fails (reads hook JSON on stdin)
   tzproof plan [config]     List the cells a run would execute, without running them
   tzproof report <results>  Rebuild report.html from a results.json
 
@@ -83,6 +85,14 @@ async function main() {
     console.log(`\n${loop.status === 'green' ? '✅ every cell is green' : '⚠️ still failing after the last attempt: handed to a human'}`);
     console.log(`log: ${join(outDir, 'LOOP.md')}`);
     return loop.status === 'green' ? 0 : 1;
+  }
+
+  if (command === 'hook') {
+    const config = loadConfig(target || 'tzproof.yaml');
+    const stdin = process.stdin.isTTY ? '' : readFileSync(0, 'utf8');
+    const out = await runStopHook(config, { stdin, parallel: args.parallel || config.parallel || 2 });
+    process.stdout.write(JSON.stringify(out));
+    return 0;
   }
 
   if (command === 'report') {

@@ -180,23 +180,35 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
         });
       }
 
-      const chrome = await launchWarpedChrome({ tz: cell.clock.tz, at: cell.clock.at, headless });
       const t0 = Date.now();
+      const maxTries = 1 + (config.retries ?? 1);
       let kane;
-      try {
-        kane = await runKane({
-          objective,
-          endpoint: chrome.endpoint,
-          variables: secrets,
-          maxSteps: cell.flow.maxSteps || config.maxSteps || 25,
-          timeout: cell.flow.timeout || config.timeout || 300,
-          ndjsonPath: join(outDir, 'cells', `${safeId}.ndjson`),
-        });
-      }
-      finally {
-        await chrome.close();
-      }
-      const { verdict, checks } = judge(cell, kane, config.dateOrder);
+      let verdict;
+      let checks;
+      let tries = 0;
+      let retry = false;
+      // A run that records nothing because the browser session broke (not because of the app) is retried once.
+      // Retries are reported; a cell never passes on a run that didn't record its values.
+      do {
+        tries++;
+        const chrome = await launchWarpedChrome({ tz: cell.clock.tz, at: cell.clock.at, headless });
+        try {
+          kane = await runKane({
+            objective,
+            endpoint: chrome.endpoint,
+            variables: secrets,
+            maxSteps: cell.flow.maxSteps || config.maxSteps || 25,
+            timeout: cell.flow.timeout || config.timeout || 300,
+            ndjsonPath: join(outDir, 'cells', `${safeId}${tries > 1 ? `.try${tries}` : ''}.ndjson`),
+          });
+        }
+        finally {
+          await chrome.close();
+        }
+        ({ verdict, checks } = judge(cell, kane, config.dateOrder));
+        retry = verdict === 'unknown' && tries < maxTries && Object.keys(kane.finalState).filter(k => k !== 'url').length === 0;
+        if (retry) log(`↻ ${cell.id}  no values recorded (${(kane.runEnd?.summary || kane.stderrTail || '').replace(/\s+/g, ' ').slice(0, 120)}), retrying`);
+      } while (retry);
       const icon = { pass: '✓', fail: '✗', unknown: '?' }[verdict];
       log(`${icon} ${cell.id}  ${checks.map(c => c.reason || `${c.key} ok`).join('; ') || kane.stderrTail}`);
       results.push({
@@ -206,6 +218,7 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
         clock: cell.clock,
         verdict,
         checks,
+        tries,
         objective,
         kane: {
           exitCode: kane.exitCode,
@@ -216,7 +229,7 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
           testUrl: kane.runEnd?.test_url ?? null,
           evidence: kane.evidence,
           steps: kane.steps.map(s => ({ step: s.step, status: s.status, remark: s.remark })),
-          ndjson: `cells/${safeId}.ndjson`,
+          ndjson: `cells/${safeId}${tries > 1 ? `.try${tries}` : ''}.ndjson`,
         },
       });
     }

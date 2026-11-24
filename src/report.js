@@ -10,7 +10,8 @@ function cellHtml(cell) {
     cell.kane.testUrl && `<a href="${esc(cell.kane.testUrl)}">Kane run ↗</a>`,
     `<a href="${esc(cell.kane.ndjson)}">NDJSON</a>`,
   ].filter(Boolean).join(' · ');
-  return `<td class="${cell.verdict}"><strong>${label}</strong>${lines}<div class="links">${links}</div></td>`;
+  const retried = cell.tries > 1 ? `<div>retried ${cell.tries - 1}× (browser session error)</div>` : '';
+  return `<td class="${cell.verdict}"><strong>${label}</strong>${lines}${retried}<div class="links">${links}</div></td>`;
 }
 
 export function renderReport(results) {

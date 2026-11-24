@@ -1,0 +1,30 @@
+{
+  "tool": "tzproof",
+  "status": "green",
+  "maxAttempts": 3,
+  "attempts": [
+    {
+      "attempt": 0,
+      "run": "0-baseline",
+      "summary": {
+        "pass": 0,
+        "fail": 3,
+        "unknown": 2
+      }
+    },
+    {
+      "attempt": 1,
+      "agent": "I haven't run this; tzproof will re-run every cell.\n\nRoot cause: \"Today\" was taken from `toISOString()`, which gives the date in UTC rather than in the user's time zone. \"Next invoice\" used `setMonth(+1)`, which rolls over into the following month when the next month is shorter (31 Jan became 3 Mar).\n\nFix: In `index.html`, \"Today\" is now built from the browser's local year, month and day. \"Next invoice\" is now the same day next month, moved back to that month's last day when the day doesn't exist (31 Jan gives 28 Feb).",
+      "agentCost": 0.38999090000000003,
+      "diff": "attempt-1.diff",
+      "prompt": "attempt-1-prompt.md",
+      "run": "1-after-fix",
+      "summary": {
+        "pass": 5,
+        "fail": 0,
+        "unknown": 0
+      }
+    }
+  ],
+  "finishedAt": "2026-11-24T18:07:52.312Z"
+}
