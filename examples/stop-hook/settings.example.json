@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /path/to/tzproof/bin/tzproof.js hook tzproof.yaml",
+            "timeout": 900
+          }
+        ]
+      }
+    ]
+  }
+}

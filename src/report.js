@@ -56,7 +56,7 @@ export function renderReport(results) {
 <body>
 <h1>tzproof report</h1>
 <div class="meta">${esc(results.app)} · ${esc(results.startedAt)} · ${results.cells.length} cells · ${credits ? `${credits.toFixed(1)} Kane credits` : ''}</div>
-${results.evidence?.merged ? `<div class="meta">Kane evidence: one sealed pack for the grid (<code>${esc(results.evidence.pack)}</code>, ${results.evidence.packs} runs) · policy <code>${esc(results.evidence.policy)}</code>: <strong>${esc(results.evidence.policyVerdict.toUpperCase())}</strong> ${esc(results.evidence.policyDetail)} · open with <code>kane-cli evidence serve ${esc(results.evidence.pack)}</code></div>` : ''}
+${results.evidence?.merged ? `<div class="meta">Kane evidence: one sealed pack for the grid (<code>${esc(results.evidence.pack)}</code>, ${results.evidence.packs} runs) · policy <code>${esc(results.evidence.policy)}</code>: <strong>${esc(results.evidence.policyVerdict.toUpperCase())}</strong>${(results.evidence.policyDetail.match(/\(([^)]*)\)\s*$/) || [])[1] ? ` (failed gate: ${esc(results.evidence.policyDetail.match(/\(([^)]*)\)\s*$/)[1])})` : ''} · open with <code>kane-cli evidence serve ${esc(results.evidence.pack)}</code></div>` : ''}
 <div class="totals"><span style="color:var(--pass-fg)">${pass} pass</span><span style="color:var(--fail-fg)">${fail} fail</span><span style="color:var(--unk-fg)">${unknown} unknown</span></div>
 <div class="wrap"><table>
 <thead><tr><th>Flow</th>${head}</tr></thead>

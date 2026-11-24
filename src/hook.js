@@ -17,7 +17,8 @@ export async function runStopHook(config, { stdin, parallel = 2 }) {
   const state = existsSync(statePath) ? JSON.parse(readFileSync(statePath, 'utf8')) : { blocked: 0 };
   if (!input.stop_hook_active) state.blocked = 0;
 
-  const outDir = join(stateDir, 'last-run');
+  // Keep every hook run, so the red grid that blocked the agent stays next to the green one that let it stop.
+  const outDir = join(stateDir, 'hook-runs', new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19));
   const results = await runGrid(config, { outDir, parallel, log: msg => process.stderr.write(`${msg}\n`) });
   writeFileSync(join(outDir, 'report.html'), renderReport(results));
   const { pass, fail, unknown } = results.summary;

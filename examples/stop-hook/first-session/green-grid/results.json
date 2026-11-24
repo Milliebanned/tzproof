@@ -1,0 +1,430 @@
+{
+  "tool": "tzproof",
+  "startedAt": "2026-11-24T19:15:42.910Z",
+  "finishedAt": "2026-11-24T19:19:22.697Z",
+  "app": "http://127.0.0.1:63097",
+  "clocks": [
+    {
+      "id": "new-york-afternoon",
+      "name": "New York, afternoon",
+      "tz": "America/New_York",
+      "at": "2026-06-15T18:00:00Z"
+    },
+    {
+      "id": "tokyo-morning",
+      "name": "Tokyo, early morning",
+      "tz": "Asia/Tokyo",
+      "at": "2026-06-15T23:30:00Z"
+    },
+    {
+      "id": "los-angeles-evening",
+      "name": "Los Angeles, late evening",
+      "tz": "America/Los_Angeles",
+      "at": "2026-06-16T04:30:00Z"
+    },
+    {
+      "id": "london-bst-midnight",
+      "name": "London, just after midnight (summer time)",
+      "tz": "Europe/London",
+      "at": "2026-04-09T23:30:00Z"
+    },
+    {
+      "id": "month-end",
+      "name": "New York, 31 January",
+      "tz": "America/New_York",
+      "at": "2027-01-31T17:00:00Z"
+    }
+  ],
+  "flows": [
+    {
+      "id": "account",
+      "name": "Account dates"
+    }
+  ],
+  "summary": {
+    "pass": 5,
+    "fail": 0,
+    "unknown": 0
+  },
+  "cells": [
+    {
+      "id": "account@new-york-afternoon",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "new-york-afternoon",
+        "name": "New York, afternoon",
+        "tz": "America/New_York",
+        "at": "2026-06-15T18:00:00Z"
+      },
+      "verdict": "pass",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-15",
+          "shownRaw": "June 15, 2026",
+          "shown": "2026-06-15",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-29",
+          "shownRaw": "June 29, 2026",
+          "shown": "2026-06-29",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-15",
+          "shownRaw": "July 15, 2026",
+          "shown": "2026-07-15",
+          "status": "pass"
+        }
+      ],
+      "tries": 1,
+      "objective": "Go to http://127.0.0.1:63097. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'. Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: 'today' is Monday, 15 June 2026; 'trial_end' is Monday, 29 June 2026; 'next_invoice' is Wednesday, 15 July 2026.",
+      "kaneAgrees": true,
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the account overview dates requested: Today, Trial ends, and Next invoice.\nConfirmed the displayed dates correspond to Monday, 15 June 2026; Monday, 29 June 2026; and Wednesday, 15 July 2026, respectively.\nCompleted successfully.",
+        "credits": 22.913625,
+        "duration": 49,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87FRM9JYFM9RC0JZD55HEKR/dashboard/share/US_R2VZTTDDC2R143G7WISQSGGX8IQIU6615CNM19ZH0EFYS59ZBE30SA1PFEDXBV8W?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/6e8d90f0-0b15-4830-9f1b-40d9e6ab9f64/evidence/0ad21cba-a2e0-4248-a0a1-3058f06e48a4.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:63097"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"the text shown next to 'Next invoice' is stored as {{ne"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "analyze: {{next_invoice}} is Wednesday, 15 July 2026."
+          },
+          {
+            "step": 5,
+            "status": "done",
+            "remark": "assert: each stored date is the correct calendar day, whatever format the page uses: {{t"
+          }
+        ],
+        "ndjson": "cells/account@new-york-afternoon.ndjson"
+      }
+    },
+    {
+      "id": "account@tokyo-morning",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "tokyo-morning",
+        "name": "Tokyo, early morning",
+        "tz": "Asia/Tokyo",
+        "at": "2026-06-15T23:30:00Z"
+      },
+      "verdict": "pass",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-16",
+          "shownRaw": "June 16, 2026",
+          "shown": "2026-06-16",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-30",
+          "shownRaw": "June 30, 2026",
+          "shown": "2026-06-30",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-16",
+          "shownRaw": "July 16, 2026",
+          "shown": "2026-07-16",
+          "status": "pass"
+        }
+      ],
+      "tries": 1,
+      "objective": "Go to http://127.0.0.1:63097. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'. Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: 'today' is Tuesday, 16 June 2026; 'trial_end' is Tuesday, 30 June 2026; 'next_invoice' is Thursday, 16 July 2026.",
+      "kaneAgrees": true,
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the account overview dates requested: Today, Trial ends, and Next invoice.\nConfirmed that Today was June 16, 2026; Trial ends was June 30, 2026; and Next invoice was July 16, 2026.\nAll retrieved dates matched the expected calendar days.",
+        "credits": 22.866364999999995,
+        "duration": 47.9,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87FRMEGX9X83CSJBBZF9W3X/dashboard/share/US_6OLHW6WQ6HN3M0IURHZPNZGIGHU9Q6SINTGC3X541VUKKWRI2XC6LTSCFE0W1U23?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/7a20f082-f1e5-4dfa-8ad9-726e7cc75283/evidence/951f45b0-a106-473f-81c1-c9483efe2c6a.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:63097"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"The text shown next to 'Next invoice' is saved as {{nex"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, '{{next_invoice}} is the correct calendar day, whatever "
+          },
+          {
+            "step": 5,
+            "status": "done",
+            "remark": "assert: {{today}} is the correct calendar day, whatever format the page uses: {{today}} "
+          },
+          {
+            "step": 6,
+            "status": "done",
+            "remark": "assert: {{trial_end}} is the correct calendar day, whatever format the page uses: {{tria"
+          },
+          {
+            "step": 7,
+            "status": "done",
+            "remark": "assert: {{next_invoice}} is the correct calendar day, whatever format the page uses: {{n"
+          }
+        ],
+        "ndjson": "cells/account@tokyo-morning.ndjson"
+      }
+    },
+    {
+      "id": "account@los-angeles-evening",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "los-angeles-evening",
+        "name": "Los Angeles, late evening",
+        "tz": "America/Los_Angeles",
+        "at": "2026-06-16T04:30:00Z"
+      },
+      "verdict": "pass",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-06-15",
+          "shownRaw": "June 15, 2026",
+          "shown": "2026-06-15",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-06-29",
+          "shownRaw": "June 29, 2026",
+          "shown": "2026-06-29",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-07-15",
+          "shownRaw": "July 15, 2026",
+          "shown": "2026-07-15",
+          "status": "pass"
+        }
+      ],
+      "tries": 1,
+      "objective": "Go to http://127.0.0.1:63097. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'. Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: 'today' is Monday, 15 June 2026; 'trial_end' is Monday, 29 June 2026; 'next_invoice' is Wednesday, 15 July 2026.",
+      "kaneAgrees": true,
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Reviewed the account overview to find the dates for Today, Trial ends, and Next invoice.\nRecorded Today as June 15, 2026; Trial ends as June 29, 2026; and Next invoice as July 15, 2026.\nConfirmed the corresponding calendar days: Monday, June 15; Monday, June 29; and Wednesday, July 15, 2026.",
+        "credits": 10.634574,
+        "duration": 38.8,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87FTW5KB7A560Z2K3D7BJSC/dashboard/share/US_VYXEEHRQ2VPE4W1L9KAXCN25DKTHZ1V23H4SVTSHT34P4Z6HDYX31DSVJENHLF0V?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/5ddb497e-9188-448c-bfbf-386151a31769/evidence/9743c258-60b0-444d-9745-5d376f927ccd.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:63097"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"the text shown next to 'Next invoice' is stored as {{ne"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "analyze: {{next_invoice}} is Wednesday, 15 July 2026."
+          },
+          {
+            "step": 5,
+            "status": "done",
+            "remark": "assert: each stored date is the correct calendar day, whatever format the page uses: {{t"
+          }
+        ],
+        "ndjson": "cells/account@los-angeles-evening.ndjson"
+      }
+    },
+    {
+      "id": "account@london-bst-midnight",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "london-bst-midnight",
+        "name": "London, just after midnight (summer time)",
+        "tz": "Europe/London",
+        "at": "2026-04-09T23:30:00Z"
+      },
+      "verdict": "pass",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2026-04-10",
+          "shownRaw": "April 10, 2026",
+          "shown": "2026-04-10",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2026-04-24",
+          "shownRaw": "April 24, 2026",
+          "shown": "2026-04-24",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2026-05-10",
+          "shownRaw": "May 10, 2026",
+          "shown": "2026-05-10",
+          "status": "pass"
+        }
+      ],
+      "tries": 1,
+      "objective": "Go to http://127.0.0.1:63097. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'. Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: 'today' is Friday, 10 April 2026; 'trial_end' is Friday, 24 April 2026; 'next_invoice' is Sunday, 10 May 2026.",
+      "kaneAgrees": true,
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Reviewed the account overview to find the dates shown for Today, Trial ends, and Next invoice.\nRecorded Today as April 10, 2026; Trial ends as April 24, 2026; and Next invoice as May 10, 2026.\nConfirmed the dates correspond to Friday, April 10, 2026; Friday, April 24, 2026; and Sunday, May 10, 2026, respectively.",
+        "credits": 20.60009,
+        "duration": 57.2,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87FTXE7QPFC27NMGJ2R4VM0/dashboard/share/US_VOTKND48CYE2MXDV1OOOBHB246JP45CSNKN50UKDCMOZU40KJWXQYWFDWMD6995Z?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/871056cd-80ee-4fe3-a676-74b024a35994/evidence/05cf2075-7bb6-484c-a8a6-9e5faf3224d4.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:63097"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"the text shown next to 'Next invoice' is stored as {{ne"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "analyze: {{next_invoice}} is Sunday, 10 May 2026."
+          },
+          {
+            "step": 5,
+            "status": "done",
+            "remark": "assert: each stored date is the correct calendar day, whatever format the page uses: {{t"
+          }
+        ],
+        "ndjson": "cells/account@london-bst-midnight.ndjson"
+      }
+    },
+    {
+      "id": "account@month-end",
+      "flow": "account",
+      "flowName": "Account dates",
+      "clock": {
+        "id": "month-end",
+        "name": "New York, 31 January",
+        "tz": "America/New_York",
+        "at": "2027-01-31T17:00:00Z"
+      },
+      "verdict": "pass",
+      "checks": [
+        {
+          "key": "today",
+          "rule": "today",
+          "expected": "2027-01-31",
+          "shownRaw": "January 31, 2027",
+          "shown": "2027-01-31",
+          "status": "pass"
+        },
+        {
+          "key": "trial_end",
+          "rule": "today+14d",
+          "expected": "2027-02-14",
+          "shownRaw": "February 14, 2027",
+          "shown": "2027-02-14",
+          "status": "pass"
+        },
+        {
+          "key": "next_invoice",
+          "rule": "today+1mo",
+          "expected": "2027-02-28",
+          "shownRaw": "February 28, 2027",
+          "shown": "2027-02-28",
+          "status": "pass"
+        }
+      ],
+      "tries": 1,
+      "objective": "Go to http://127.0.0.1:63097. Store the text shown next to 'Today' as 'today', the text shown next to 'Trial ends' as 'trial_end', and the text shown next to 'Next invoice' as 'next_invoice'. Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: 'today' is Sunday, 31 January 2027; 'trial_end' is Sunday, 14 February 2027; 'next_invoice' is Sunday, 28 February 2027.",
+      "kaneAgrees": true,
+      "kane": {
+        "exitCode": 0,
+        "status": "passed",
+        "summary": "Retrieved the account overview dates requested: Today was January 31, 2027; Trial ends was February 14, 2027; and Next invoice was February 28, 2027.\nConfirmed the calendar days for all three dates: Sunday, 31 January 2027; Sunday, 14 February 2027; and Sunday, 28 February 2027.\nCompleted the date lookup successfully.",
+        "credits": 24.185404999999996,
+        "duration": 57.8,
+        "testUrl": "https://test-manager.lambdatest.com/projects/01M873X18EC5NTYTMV02RSZAGD/test-cases/01M87FWSPMT5DKHMF5Y5K2K4FD/dashboard/share/US_2DWY2Y3X2KOYAZ8C0GPOWEI7PNNMMU9H0YFM55G19N6ZBDLGWE0WTAPMU5BFZEAA?type=summary&agentView=true&fqdn=summary-page",
+        "evidence": "/Users/Apple/.testmuai/kaneai/sessions/fd6e54d5-9651-425e-b4a7-e708844d2cab/evidence/6426f208-f88e-4084-88d9-b671cffc004a.evidence",
+        "steps": [
+          {
+            "step": 2,
+            "status": "done",
+            "remark": "navigate: Navigate to http://127.0.0.1:63097"
+          },
+          {
+            "step": 3,
+            "status": "done",
+            "remark": "analyze: ANALYZE(textual_visual, \"The text shown next to 'Next invoice' is stored as {{ne"
+          },
+          {
+            "step": 4,
+            "status": "done",
+            "remark": "analyze: {{next_invoice}} is Sunday, 28 February 2027."
+          },
+          {
+            "step": 5,
+            "status": "done",
+            "remark": "assert: Each stored date is the correct calendar day, whatever format the page uses: {{t"
+          }
+        ],
+        "ndjson": "cells/account@month-end.ndjson"
+      }
+    }
+  ],
+  "evidence": {
+    "merged": false,
+    "packs": 5
+  }
+}

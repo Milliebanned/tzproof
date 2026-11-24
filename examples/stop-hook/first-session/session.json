@@ -1,0 +1,6 @@
+{
+  "num_turns": 6,
+  "total_cost_usd": 0.44054899999999997,
+  "result": "Root cause: \"Today\" came from `toISOString()`, which gives the date in UTC rather than the user's local date, and \"Next invoice\" used `setMonth(+1)`, which rolls past short months (Jan 31 became Mar 3).\nFix: In `app/index.html`, \"Today\" now uses the local date in the same format as the other dates, and \"Next invoice\" stays on the same day next month but caps it at that month's last day (Jan 31 now gives Feb 28/29); I couldn't run it, so tzproof's re-run will confirm it.",
+  "subtype": "success"
+}
