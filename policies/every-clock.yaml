@@ -1,0 +1,17 @@
+policy: tzproof-every-clock
+gates:
+  - id: every-clock-passes
+    metric: totals.failed
+    equals: 0
+    severity: blocking
+    message: At one or more clocks or time zones, Kane found a date that was not the correct calendar day.
+  - id: no-broken-runs
+    metric: totals.broken
+    equals: 0
+    severity: blocking
+    message: A Kane run broke before it could check the dates, so that clock is unproven.
+  - id: every-run-checks
+    metric: metrics.tests_without_checks
+    equals: 0
+    severity: blocking
+    message: Every cell must assert its dates, not just read them.

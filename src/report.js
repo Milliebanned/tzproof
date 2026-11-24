@@ -10,8 +10,10 @@ function cellHtml(cell) {
     cell.kane.testUrl && `<a href="${esc(cell.kane.testUrl)}">Kane run ↗</a>`,
     `<a href="${esc(cell.kane.ndjson)}">NDJSON</a>`,
   ].filter(Boolean).join(' · ');
+  const agree = cell.kaneAgrees === false
+    ? `<div class="disagree">Kane's own check said ${cell.verdict === 'pass' ? 'FAIL' : 'PASS'}</div>` : '';
   const retried = cell.tries > 1 ? `<div>retried ${cell.tries - 1}× (browser session error)</div>` : '';
-  return `<td class="${cell.verdict}"><strong>${label}</strong>${lines}${retried}<div class="links">${links}</div></td>`;
+  return `<td class="${cell.verdict}"><strong>${label}</strong>${lines}${agree}${retried}<div class="links">${links}</div></td>`;
 }
 
 export function renderReport(results) {
@@ -47,12 +49,14 @@ export function renderReport(results) {
   td.unknown { background:var(--unk); color:var(--unk-fg); }
   .links { margin-top:6px; font-size:12px; }
   .links a { color:inherit; }
+  .disagree { margin-top:6px; font-weight:600; text-decoration:underline dotted; }
   .note { color:var(--muted); margin-top:16px; max-width:70ch; }
 </style>
 </head>
 <body>
 <h1>tzproof report</h1>
 <div class="meta">${esc(results.app)} · ${esc(results.startedAt)} · ${results.cells.length} cells · ${credits ? `${credits.toFixed(1)} Kane credits` : ''}</div>
+${results.evidence?.merged ? `<div class="meta">Kane evidence: one sealed pack for the grid (<code>${esc(results.evidence.pack)}</code>, ${results.evidence.packs} runs) · policy <code>${esc(results.evidence.policy)}</code>: <strong>${esc(results.evidence.policyVerdict.toUpperCase())}</strong> ${esc(results.evidence.policyDetail)} · open with <code>kane-cli evidence serve ${esc(results.evidence.pack)}</code></div>` : ''}
 <div class="totals"><span style="color:var(--pass-fg)">${pass} pass</span><span style="color:var(--fail-fg)">${fail} fail</span><span style="color:var(--unk-fg)">${unknown} unknown</span></div>
 <div class="wrap"><table>
 <thead><tr><th>Flow</th>${head}</tr></thead>

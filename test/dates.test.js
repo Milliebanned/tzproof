@@ -54,3 +54,25 @@ test('a missing value or a Kane error is unknown, never pass', () => {
 test('correct dates pass', () => {
   assert.equal(judge(cell, { exitCode: 0, runEnd: { status: 'passed' }, finalState: { today: 'June 16, 2026' } }, 'mdy').verdict, 'pass');
 });
+
+test('Kane is asked to assert the expected day in plain words', async () => {
+  const { withKaneAssertions } = await import('../src/runner.js');
+  const text = withKaneAssertions('Go to the page.', {
+    clock: { tz: 'Asia/Tokyo', at: '2026-06-15T23:30:00Z' },
+    flow: { expect: { today: 'today', trial_end: 'today+14d' } },
+  }, {});
+  assert.match(text, /'today' is Tuesday 16 June 2026|'today' is Tuesday, 16 June 2026/);
+  assert.match(text, /'trial_end' is Tuesday,? 30 June 2026/);
+  assert.match(text, /Store all of those values first/);
+  assert.equal(withKaneAssertions('Go.', { clock: {}, flow: { expect: { a: 'today' } } }, { kaneAssert: false }), 'Go.');
+});
+
+test('values come from the Kane run context when its own check failed', async () => {
+  const { valuesRead } = await import('../src/runner.js');
+  const runEnd = { status: 'failed', final_state: {}, context: { variables: {
+    today: { value: '2026-04-09', type: 'memory' },
+    password: { value: 'x', type: 'global', secret: true },
+  } } };
+  assert.deepEqual(valuesRead(runEnd), { today: '2026-04-09' });
+  assert.deepEqual(valuesRead({ final_state: { today: 'a' }, context: { variables: { today: { value: 'b', type: 'memory' } } } }), { today: 'a' });
+});

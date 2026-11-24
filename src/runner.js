@@ -1,10 +1,13 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { dirname, extname, join, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 import { formatYmd, localDate, parseShownDate, resolveDateExpr, sameDay } from './dates.js';
 import { freePort, launchWarpedChrome } from './warp.js';
+
+const TOOL_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 export function loadConfig(path) {
   const config = parseYaml(readFileSync(path, 'utf8'));
@@ -33,6 +36,25 @@ export function planCells(config, { only } = {}) {
 
 function fill(template, vars) {
   return String(template).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (whole, key) => (key in vars ? vars[key] : whole));
+}
+
+function spokenDate({ y, m, d }) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+/**
+ * Ask Kane to assert each expected date itself, as a second check independent of tzproof's own comparison.
+ * The verdict still comes from tzproof; the two are compared in the report.
+ */
+export function withKaneAssertions(objective, cell, config) {
+  if (config.kaneAssert === false || !cell.flow.expect) return objective;
+  const atMs = Date.parse(cell.clock.at);
+  const expectations = Object.entries(cell.flow.expect).map(([key, spec]) => {
+    const expected = resolveDateExpr(typeof spec === 'string' ? spec : spec.date, atMs, cell.clock.tz);
+    return `'${key}' is ${spokenDate(expected)}`;
+  });
+  return `${objective.trim()} Store all of those values first. Only after every value is stored, verify that each stored date is the correct calendar day, whatever format the page uses: ${expectations.join('; ')}.`;
 }
 
 /** Compare what Kane read off the page with what the date should be in this cell. Kane's own pass/fail is not used. */
@@ -74,10 +96,23 @@ export function judge(cell, kane, dateOrder) {
   return { verdict, checks };
 }
 
+/**
+ * Every value Kane read. `final_state` is empty when one of Kane's own checks fails, but the values it stored
+ * along the way are still in the run's context, and tzproof needs them to give its own verdict.
+ */
+export function valuesRead(runEnd) {
+  const values = {};
+  for (const [key, v] of Object.entries(runEnd?.context?.variables || {})) {
+    if (v && v.type === 'memory' && v.value !== undefined) values[key] = v.value;
+  }
+  return { ...values, ...(runEnd?.final_state || {}) };
+}
+
 function runKane({ objective, endpoint, variables, maxSteps, timeout, ndjsonPath }) {
   return new Promise((resolvePromise) => {
+    // A failed date check must not end the run: tzproof still needs every value Kane read.
     const args = ['run', objective, '--agent', '--cdp-endpoint', endpoint,
-      '--max-steps', String(maxSteps), '--timeout', String(timeout)];
+      '--max-steps', String(maxSteps), '--timeout', String(timeout), '--assertion-failure-mode', 'continue'];
     if (Object.keys(variables).length) args.push('--variables', JSON.stringify(variables));
     const child = spawn('kane-cli', args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
@@ -95,7 +130,7 @@ function runKane({ objective, endpoint, variables, maxSteps, timeout, ndjsonPath
       resolvePromise({
         exitCode,
         runEnd,
-        finalState: runEnd?.final_state || {},
+        finalState: valuesRead(runEnd),
         steps: events.filter(e => e.step !== undefined && e.status !== 'running'),
         evidence,
         stderrTail: stderr.trim().split('\n').slice(-3).join('\n'),
@@ -170,7 +205,7 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
       const cell = cells[next++];
       const atMs = Date.parse(cell.clock.at);
       const vars = { app, tz: cell.clock.tz, at: cell.clock.at, today: formatYmd(localDate(atMs, cell.clock.tz)) };
-      const objective = fill(cell.flow.objective, vars).replace(/\s+/g, ' ').trim();
+      const objective = withKaneAssertions(fill(cell.flow.objective, vars), cell, config).replace(/\s+/g, ' ').trim();
       const safeId = cell.id.replace(/[^\w.@-]+/g, '_');
       log(`… ${cell.id}  (${cell.clock.tz}, ${cell.clock.at})`);
 
@@ -206,7 +241,10 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
           await chrome.close();
         }
         ({ verdict, checks } = judge(cell, kane, config.dateOrder));
-        retry = verdict === 'unknown' && tries < maxTries && Object.keys(kane.finalState).filter(k => k !== 'url').length === 0;
+        const brokenSession = kane.exitCode === 2 || kane.exitCode === 3
+          || /target(closed)?|page.{0,40}closed|closed unexpectedly|screenshot failed|crash/i.test(`${kane.runEnd?.summary || ''} ${kane.stderrTail}`);
+        retry = verdict === 'unknown' && tries < maxTries && brokenSession
+          && Object.keys(kane.finalState).filter(k => k !== 'url').length === 0;
         if (retry) log(`↻ ${cell.id}  no values recorded (${(kane.runEnd?.summary || kane.stderrTail || '').replace(/\s+/g, ' ').slice(0, 120)}), retrying`);
       } while (retry);
       const icon = { pass: '✓', fail: '✗', unknown: '?' }[verdict];
@@ -220,11 +258,12 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
         checks,
         tries,
         objective,
+        kaneAgrees: kane.runEnd ? ((kane.runEnd.status === 'passed') === (verdict === 'pass')) : null,
         kane: {
           exitCode: kane.exitCode,
           status: kane.runEnd?.status ?? null,
           summary: kane.runEnd?.summary ?? null,
-          credits: kane.runEnd?.credits ?? null,
+          credits: kane.runEnd?.credits_consumed ?? kane.runEnd?.credits ?? null,
           duration: kane.runEnd?.duration ?? Math.round((Date.now() - t0) / 1000),
           testUrl: kane.runEnd?.test_url ?? null,
           evidence: kane.evidence,
@@ -259,6 +298,37 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
     summary,
     cells: results,
   };
+  out.evidence = await sealGrid(results, outDir, config, log);
   writeFileSync(join(outDir, 'results.json'), JSON.stringify(out, null, 2));
   return out;
+}
+
+function kaneCli(args) {
+  return new Promise((resolvePromise) => {
+    const child = spawn('kane-cli', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('close', code => resolvePromise({ code, stdout, stderr }));
+  });
+}
+
+/** Merge every cell's Kane evidence pack into one sealed pack for the grid, then judge it against the policy. */
+async function sealGrid(results, outDir, config, log) {
+  const packs = results.map(r => r.kane.evidence).filter(Boolean);
+  if (!packs.length) return null;
+  const packPath = join(outDir, 'grid.evidence');
+  const runId = `tzproof-${basename(outDir)}-${Date.now()}`;
+  const merge = await kaneCli(['evidence', 'merge', ...packs, '--run-id', runId, '--title', `tzproof grid (${results.length} cells)`, '-o', packPath]);
+  if (merge.code !== 0) {
+    log(`evidence merge failed: ${merge.stderr.trim().split('\n').pop()}`);
+    return { merged: false, packs: packs.length };
+  }
+  const policyPath = resolve(config.base, config.policy || join(TOOL_ROOT, 'policies/every-clock.yaml'));
+  const judged = await kaneCli(['evidence', 'verdict', packPath, '--policy', policyPath]);
+  const verdictLine = (judged.stdout + judged.stderr).split('\n').find(l => l.startsWith('verdict:')) || '';
+  const status = judged.code === 0 ? 'pass' : judged.code === 1 ? 'fail' : 'errored';
+  log(`kane policy (${basename(policyPath)}): ${verdictLine.replace(/^verdict:\s*/, '') || status}`);
+  return { merged: true, pack: 'grid.evidence', packs: packs.length, runId, policy: basename(policyPath), policyVerdict: status, policyDetail: verdictLine.replace(/^verdict:\s*/, '') };
 }

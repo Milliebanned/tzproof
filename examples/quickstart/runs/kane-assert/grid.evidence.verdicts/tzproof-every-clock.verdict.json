@@ -1,0 +1,71 @@
+{
+  "result": "fail",
+  "evaluated_at": "2026-11-24T18:41:23.550Z",
+  "evaluator": "evidence-cli 0.2.0",
+  "pack": {
+    "run_id": "tzproof-kane-assert-1795545680883",
+    "sha256": "b7016ce6bb9f4ef4e2d8ddd65c12abc8c88e6574dcd649b0f7f7e0003213326d",
+    "contract": "0.1"
+  },
+  "policy": {
+    "id": "tzproof-every-clock",
+    "sha256": "4214d8f0c47b44e5c992b9bad98140cd0387974e780c8140a616f01f5399f174"
+  },
+  "catalog": {
+    "id": "kane-cli",
+    "version": 1,
+    "sha256": "9774e11a8a2240448d765bd4ad8eb1cf6c0444937e72050588b597539c890e77",
+    "source": "bundled"
+  },
+  "error": null,
+  "gates": [
+    {
+      "id": "every-clock-passes",
+      "metric": "totals.failed",
+      "where": null,
+      "op": "equals",
+      "expected": 0,
+      "severity": "blocking",
+      "message": "At one or more clocks or time zones, Kane found a date that was not the correct calendar day.",
+      "actual": 3,
+      "status": "fail",
+      "trust": "recomputed",
+      "error": null,
+      "stored": null
+    },
+    {
+      "id": "no-broken-runs",
+      "metric": "totals.broken",
+      "where": null,
+      "op": "equals",
+      "expected": 0,
+      "severity": "blocking",
+      "message": "A Kane run broke before it could check the dates, so that clock is unproven.",
+      "actual": 0,
+      "status": "pass",
+      "trust": "recomputed",
+      "error": null,
+      "stored": null
+    },
+    {
+      "id": "every-run-checks",
+      "metric": "metrics.tests_without_checks",
+      "where": null,
+      "op": "equals",
+      "expected": 0,
+      "severity": "blocking",
+      "message": "Every cell must assert its dates, not just read them.",
+      "actual": 0,
+      "status": "pass",
+      "trust": "recomputed",
+      "error": null,
+      "stored": null
+    }
+  ],
+  "failed_gates": [
+    "every-clock-passes"
+  ],
+  "warnings": [],
+  "errored_gates": [],
+  "exit_code": 1
+}
