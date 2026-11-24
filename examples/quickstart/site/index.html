@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acme Billing</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 560px; margin: 48px auto; padding: 0 16px; color: #1b1b1f; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; }
+  dt { color: #6b6b76; }
+  dd { margin: 0; font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>Your account</h1>
+<dl>
+  <dt>Today</dt><dd id="today"></dd>
+  <dt>Trial ends</dt><dd id="trial-end"></dd>
+  <dt>Next invoice</dt><dd id="next-invoice"></dd>
+</dl>
+<script>
+  // These are deliberate, common date bugs, kept here so tzproof has something real to catch.
+  const now = new Date();
+  const fmt = d => d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Bug 1: toISOString() is UTC, so near midnight the "local" day is wrong for anyone not on UTC.
+  const isoDay = now.toISOString().slice(0, 10);
+  document.getElementById('today').textContent = isoDay;
+
+  // Correct: 14 days from the local calendar day.
+  const trialEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 14);
+  document.getElementById('trial-end').textContent = fmt(trialEnd);
+
+  // Bug 2: setMonth overflows, so January 31 + 1 month becomes March 3 (or 2 in a leap year).
+  const invoice = new Date(now);
+  invoice.setMonth(invoice.getMonth() + 1);
+  document.getElementById('next-invoice').textContent = fmt(invoice);
+</script>
+</body>
+</html>

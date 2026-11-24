@@ -1,0 +1,20 @@
+{
+  "name": "tzproof",
+  "version": "0.1.0",
+  "description": "Test your web app at every clock and time zone with Kane CLI, and let your coding agent fix what breaks.",
+  "type": "module",
+  "bin": {
+    "tzproof": "bin/tzproof.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["testing", "timezone", "kane-cli", "e2e", "dates", "coding-agents"],
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.5.0"
+  }
+}
