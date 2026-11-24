@@ -2,12 +2,14 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { renderReport } from '../src/report.js';
+import { runLoop } from '../src/loop.js';
 import { loadConfig, planCells, runGrid } from '../src/runner.js';
 
 const HELP = `tzproof — test your web app at every clock and time zone with Kane CLI
 
 Usage:
   tzproof run [config]      Run every flow at every clock (default config: tzproof.yaml)
+  tzproof fix [config]      Run, hand failures to your coding agent, re-run the whole grid; repeat until green
   tzproof plan [config]     List the cells a run would execute, without running them
   tzproof report <results>  Rebuild report.html from a results.json
 
@@ -28,6 +30,7 @@ function parseArgs(argv) {
     else if (a === '--parallel') args.parallel = Number(argv[++i]);
     else if (a === '--only') args.only.push(argv[++i]);
     else if (a === '--headed') args.headed = true;
+    else if (a === '--max-attempts') args.maxAttempts = Number(argv[++i]);
     else if (a === '-h' || a === '--help') args.help = true;
     else args._.push(a);
   }
@@ -65,6 +68,21 @@ async function main() {
     console.log(`\n${pass} pass · ${fail} fail · ${unknown} unknown`);
     console.log(`report: ${join(outDir, 'report.html')}`);
     return fail ? 1 : unknown ? 2 : 0;
+  }
+
+  if (command === 'fix') {
+    const config = loadConfig(target || 'tzproof.yaml');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const outDir = resolve(args.out || join('tzproof-runs', `fix-${stamp}`));
+    const loop = await runLoop(config, {
+      outDir,
+      parallel: args.parallel || config.parallel || 2,
+      headless: !args.headed,
+      maxAttempts: args.maxAttempts || config.fix?.maxAttempts || 3,
+    });
+    console.log(`\n${loop.status === 'green' ? '✅ every cell is green' : '⚠️ still failing after the last attempt: handed to a human'}`);
+    console.log(`log: ${join(outDir, 'LOOP.md')}`);
+    return loop.status === 'green' ? 0 : 1;
   }
 
   if (command === 'report') {

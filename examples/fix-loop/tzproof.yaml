@@ -1,0 +1,42 @@
+# The quickstart billing page, with the fix loop on. Run with:  npx tzproof fix examples/fix-loop/tzproof.yaml
+serve: ./app
+dateOrder: mdy
+parallel: 2
+
+clocks:
+  - id: new-york-afternoon
+    name: New York, afternoon
+    tz: America/New_York
+    at: 2026-06-15T18:00:00Z
+  - id: tokyo-morning
+    name: Tokyo, early morning
+    tz: Asia/Tokyo
+    at: 2026-06-15T23:30:00Z
+  - id: los-angeles-evening
+    name: Los Angeles, late evening
+    tz: America/Los_Angeles
+    at: 2026-06-16T04:30:00Z
+  - id: london-bst-midnight
+    name: London, just after midnight (summer time)
+    tz: Europe/London
+    at: 2026-04-09T23:30:00Z
+  - id: month-end
+    name: New York, 31 January
+    tz: America/New_York
+    at: 2027-01-31T17:00:00Z
+
+flows:
+  - id: account
+    name: Account dates
+    objective: >
+      Go to {{app}}. Store the text shown next to 'Today' as 'today',
+      the text shown next to 'Trial ends' as 'trial_end',
+      and the text shown next to 'Next invoice' as 'next_invoice'.
+    expect:
+      today: today
+      trial_end: today+14d
+      next_invoice: today+1mo
+
+fix:
+  edit: ./app            # the only folder the coding agent may change
+  maxAttempts: 3
