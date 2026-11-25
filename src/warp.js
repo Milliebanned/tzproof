@@ -70,6 +70,8 @@ export async function launchWarpedChrome({ tz, at, headless = true, width = 1920
     '--no-default-browser-check',
     `--window-size=${width},${height}`,
     ...(headless ? ['--headless=new'] : []),
+    // Containers usually run as root without user namespaces, where Chrome's sandbox can't start.
+    ...(process.env.TZPROOF_NO_SANDBOX ? ['--no-sandbox', '--disable-dev-shm-usage'] : []),
     'about:blank',
   ];
   const chrome = spawn(findChrome(), args, { env: { ...process.env, TZ: tz }, stdio: 'ignore' });

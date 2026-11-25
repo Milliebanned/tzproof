@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tzproof</title>
+<meta name="description" content="tzproof opens your web app in a real Chrome in Tokyo at 8:30 AM, London after midnight in summer and on 31 January, and checks every date it shows. Kane CLI reads the page, code judges the date, Claude fixes what is wrong.">
+<meta property="og:title" content="tzproof · every date, right in every time zone">
+<meta property="og:description" content="Paste your site. Kane CLI opens it at many clocks and time zones. tzproof checks every date. Claude fixes what is wrong.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f6b47'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23f7f2ea' stroke-width='2.4'/%3E%3Cpath d='M16 10.5V16l3.6 2.4' stroke='%23f7f2ea' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f7f2ea; --cream-2: #f1eadf; --paper: #fffdf9; --ink: #1f1a15; --ink-2: #4a4239; --muted: #8a8075;
+    --line: #e6ddd0; --line-2: #d9cebe;
+    --green: #0f6b47; --green-2: #15885b; --green-soft: #e2efe6; --green-ink: #f3fbf6;
+    --red: #c8402c; --red-soft: #f8e3dd; --amber: #9a6a0a;
+    --night: #1a1713; --night-2: #26211b; --night-line: #3a3229;
+    --display: "Faculty Glyphic", Georgia, serif;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --frame: 1180px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --cream: #17140f; --cream-2: #1d1913; --paper: #211c16; --ink: #f3ede4; --ink-2: #cfc5b8; --muted: #9b9184;
+      --line: #322b22; --line-2: #3d352a; --green: #3fbf86; --green-2: #5cd39c; --green-soft: #13291f; --green-ink: #0b1a13;
+      --red: #ff8a76; --red-soft: #33191394; --amber: #f0c560;
+    }
+  }
+  :root[data-theme="dark"] {
+    --cream: #17140f; --cream-2: #1d1913; --paper: #211c16; --ink: #f3ede4; --ink-2: #cfc5b8; --muted: #9b9184;
+    --line: #322b22; --line-2: #3d352a; --green: #3fbf86; --green-2: #5cd39c; --green-soft: #13291f; --green-ink: #0b1a13;
+    --red: #ff8a76; --red-soft: #33191394; --amber: #f0c560;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font: 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: inherit; }
+  .frame { max-width: var(--frame); margin: 0 auto; border-left: 1px solid var(--line); border-right: 1px solid var(--line); position: relative; }
+  .pad { padding-left: 56px; padding-right: 56px; }
+  @media (max-width: 760px) { .pad { padding-left: 18px; padding-right: 18px; } .frame { border: 0; } }
+  .eyebrow { color: var(--green); font-weight: 600; font-size: 14px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+
+  /* ---------- announcement + nav ---------- */
+  .announce { background: var(--night); color: #efe7db; text-align: center; font-size: 14px; padding: 10px 16px; }
+  .announce a { text-decoration: none; }
+  .announce span { color: #8fd8b3; }
+  .nav-wrap { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--cream) 86%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-size: 24px; }
+  .brand svg { width: 26px; height: 26px; }
+  .links { display: flex; gap: 26px; font-size: 14px; }
+  .links a { text-decoration: none; color: var(--ink-2); }
+  .links a:hover { color: var(--ink); }
+  .nav-cta { display: flex; gap: 14px; align-items: center; font-size: 14px; }
+  @media (max-width: 860px) { .links { display: none; } }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; padding: 11px 18px; font: 600 15px/1 var(--sans); text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform .2s, background .2s, box-shadow .2s; white-space: nowrap; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn.primary { background: var(--green); color: var(--green-ink); box-shadow: 0 8px 20px -10px var(--green); }
+  .btn.primary:hover { background: var(--green-2); }
+  .btn.light { background: var(--paper); color: var(--ink); border-color: var(--line); }
+  .btn.small { padding: 8px 14px; font-size: 14px; }
+  .btn .play { width: 0; height: 0; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
+
+  /* ---------- hero ---------- */
+  .hero { text-align: center; padding-top: 84px; padding-bottom: 64px; }
+  .proofline { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); margin-bottom: 26px; }
+  .proofline .dots { display: inline-flex; gap: 3px; }
+  .proofline .dots i { width: 9px; height: 9px; border-radius: 2px; background: var(--red); }
+  .proofline .dots i.ok { background: var(--green); }
+  .hero h1 { font-size: clamp(44px, 7.2vw, 84px); line-height: 1.02; margin: 0 auto 22px; max-width: 15ch; }
+  .hero h1 .swap { display: inline-block; color: var(--green); min-width: 4ch; transition: opacity .35s, transform .35s; }
+  .hero h1 .swap.out { opacity: 0; transform: translateY(10px); }
+  .hero p.sub { font-size: 19px; color: var(--muted); max-width: 52ch; margin: 0 auto 32px; }
+  .hero .ctas { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .hero .stats { display: flex; gap: 28px; justify-content: center; margin-top: 28px; font-size: 15px; color: var(--muted); flex-wrap: wrap; }
+  .hero .stats b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sky panels ---------- */
+  .sky { position: relative; overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .sky .layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s ease; }
+  .sky .layer.on { opacity: 1; }
+  .sky-dawn { background: radial-gradient(70% 90% at 75% 20%, #ffb38a 0%, transparent 60%), radial-gradient(60% 70% at 15% 80%, #c9b6e8 0%, transparent 70%), linear-gradient(160deg, #f6d7c3, #e7c6d9); }
+  .sky-noon { background: radial-gradient(60% 80% at 70% 10%, #fff6d8 0%, transparent 55%), radial-gradient(80% 80% at 20% 90%, #9cc7ef 0%, transparent 70%), linear-gradient(170deg, #b8dcf6, #e9f3fb); }
+  .sky-dusk { background: radial-gradient(70% 90% at 80% 30%, #ff8c5a 0%, transparent 60%), radial-gradient(70% 80% at 10% 85%, #7d6bc9 0%, transparent 70%), linear-gradient(165deg, #f0a07c, #6d5aa8); }
+  .sky-night { background: radial-gradient(50% 60% at 78% 22%, #3b4c8f 0%, transparent 60%), radial-gradient(70% 70% at 20% 90%, #0f3d3a 0%, transparent 70%), linear-gradient(170deg, #121a33, #0b0f1d); }
+  .sky .grain { position: absolute; inset: 0; opacity: .14; mix-blend-mode: soft-light; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .sky-inner { position: relative; padding: 70px 56px 0; }
+  @media (max-width: 760px) { .sky-inner { padding: 40px 14px 0; } }
+  .sky-caption { text-align: center; color: #fff; font-family: var(--display); font-size: clamp(20px, 2.4vw, 26px); margin: 0 0 30px; text-shadow: 0 1px 14px rgba(0,0,0,.18); }
+  .sky-caption b { font-weight: 400; transition: opacity .4s; }
+
+  /* ---------- product window (mockup, built from real run data) ---------- */
+  .window { background: var(--paper); border-radius: 16px 16px 0 0; box-shadow: 0 30px 80px -30px rgba(20, 12, 4, .45); overflow: hidden; max-width: 920px; margin: 0 auto; border: 1px solid rgba(255,255,255,.4); border-bottom: 0; }
+  .win-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .win-bar .who { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 18px; }
+  .pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .pill.red { background: var(--red-soft); color: var(--red); }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .win-body { display: grid; grid-template-columns: 230px 1fr; min-height: 360px; }
+  @media (max-width: 760px) { .win-body { grid-template-columns: 1fr; } .win-side { display: none; } }
+  .win-side { border-right: 1px solid var(--line); padding: 14px; background: var(--cream-2); }
+  .win-side h5 { margin: 4px 6px 10px; font: 500 12px/1 var(--sans); color: var(--muted); }
+  .clockrow { display: flex; justify-content: space-between; align-items: center; padding: 9px 10px; border-radius: 10px; font-size: 14px; transition: background .4s; }
+  .clockrow.on { background: var(--paper); box-shadow: 0 1px 0 var(--line); }
+  .clockrow small { display: block; color: var(--muted); font-size: 12px; }
+  .clockrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); transition: background .4s; }
+  .clockrow .dot.fail { background: var(--red); } .clockrow .dot.pass { background: var(--green); } .clockrow .dot.run { background: #5a7bd6; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .win-main { padding: 16px 18px 22px; }
+  .bubble { display: inline-block; background: var(--night); color: #f3ece2; border-radius: 12px; padding: 8px 12px; font-size: 14px; float: right; margin-bottom: 12px; }
+  .agent-line { clear: both; display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--ink-2); margin-bottom: 14px; }
+  .agent-line .av { width: 26px; height: 26px; border-radius: 8px; background: var(--green); display: grid; place-items: center; }
+  .cells { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  @media (max-width: 760px) { .cells { grid-template-columns: repeat(2, 1fr); } }
+  .mcell { border: 1px solid var(--line); border-radius: 10px; padding: 9px; font-size: 12px; background: var(--cream-2); min-height: 108px; transition: background .5s, border-color .5s; }
+  .mcell .t { font-weight: 600; font-size: 13px; }
+  .mcell .w { color: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+  .mcell .v { margin-top: 8px; font: 700 10px/1 var(--mono); letter-spacing: .1em; color: var(--muted); }
+  .mcell .d { margin-top: 6px; line-height: 1.35; color: var(--ink-2); }
+  .mcell.run { border-color: #5a7bd6; background: #edf1fc; } .mcell.run .v { color: #3d5cc4; }
+  .mcell.fail { border-color: color-mix(in srgb, var(--red) 45%, transparent); background: var(--red-soft); } .mcell.fail .v, .mcell.fail .d b { color: var(--red); }
+  .mcell.pass { border-color: color-mix(in srgb, var(--green) 45%, transparent); background: var(--green-soft); } .mcell.pass .v { color: var(--green); }
+  .verdict-bar { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+
+  /* ---------- works with marquee ---------- */
+  .marquee { border-bottom: 1px solid var(--line); overflow: hidden; padding: 22px 0; position: relative; }
+  .marquee::before, .marquee::after { content: ""; position: absolute; top: 0; bottom: 0; width: 120px; z-index: 1; }
+  .marquee::before { left: 0; background: linear-gradient(90deg, var(--cream), transparent); }
+  .marquee::after { right: 0; background: linear-gradient(-90deg, var(--cream), transparent); }
+  .track { display: flex; gap: 56px; width: max-content; animation: slide 36s linear infinite; }
+  .track span { font-family: var(--display); font-size: 22px; color: var(--muted); white-space: nowrap; display: inline-flex; gap: 10px; align-items: center; }
+  .track span i { font-style: normal; font-family: var(--mono); font-size: 12px; border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  /* ---------- feature sections ---------- */
+  section.block { border-bottom: 1px solid var(--line); }
+  .block-head { padding-top: 72px; padding-bottom: 26px; max-width: 760px; }
+  .block-head h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.1; margin: 8px 0 12px; }
+  .block-head p { color: var(--muted); font-size: 17px; margin: 0; max-width: 58ch; }
+  .feature { padding-top: 52px; }
+  .feature + .feature { border-top: 1px solid var(--line); }
+  .feature h3 { font-size: clamp(26px, 3vw, 34px); margin: 0 0 8px; line-height: 1.15; }
+  .feature > .pad > p { color: var(--muted); margin: 0 0 28px; max-width: 56ch; }
+  .fsky { position: relative; height: 440px; overflow: hidden; margin: 0 56px; border-radius: 0; }
+  @media (max-width: 760px) { .fsky { margin: 0; height: auto; min-height: 380px; } }
+  .fsky .layer { position: absolute; inset: 0; }
+  .float { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(780px, 92%); background: var(--paper); border-radius: 14px 14px 0 0; box-shadow: 0 30px 70px -30px rgba(20, 12, 4, .5); overflow: hidden; }
+  @media (max-width: 760px) { .float { position: relative; left: auto; transform: none; width: 94%; margin: 34px auto 0; } }
+  .fbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .fbar b { color: var(--ink); font-weight: 600; }
+  .fbody { padding: 16px; display: grid; gap: 14px; }
+  .shot { width: 100%; height: 170px; border-radius: 10px; border: 1px solid var(--line); background: #fff left top / cover no-repeat; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .compare div { border-radius: 10px; padding: 12px; border: 1px solid var(--line); }
+  .compare .bad { background: var(--red-soft); border-color: color-mix(in srgb, var(--red) 35%, transparent); }
+  .compare .good { background: var(--green-soft); border-color: color-mix(in srgb, var(--green) 35%, transparent); }
+  .compare small { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-family: var(--mono); }
+  .compare b { font-family: var(--display); font-weight: 400; font-size: 24px; }
+  pre.diff { margin: 0; background: var(--night); color: #e8e1d6; border-radius: 10px; padding: 14px; font: 12.5px/1.6 var(--mono); overflow-x: auto; }
+  pre.diff .a { color: #79dcaa; } pre.diff .r { color: #ff9b88; } pre.diff .h { color: #8c8174; }
+  .agent-note { background: var(--cream-2); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink-2); }
+  .term { background: var(--night); color: #e8e1d6; border-radius: 10px; padding: 14px; font: 13px/1.7 var(--mono); white-space: pre-wrap; }
+  .term .g { color: #79dcaa; } .term .r { color: #ff9b88; } .term .m { color: #8c8174; }
+
+  /* ---------- prompt section ---------- */
+  .ask { text-align: center; padding-top: 90px; padding-bottom: 90px; }
+  .ask h2 { font-size: clamp(32px, 4.4vw, 52px); margin: 10px 0 12px; }
+  .ask p { color: var(--muted); max-width: 46ch; margin: 0 auto 34px; }
+  .prompt { max-width: 640px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px; text-align: left; box-shadow: 0 20px 40px -30px rgba(20, 12, 4, .35); }
+  .prompt .typed { min-height: 52px; font-size: 17px; color: var(--ink); }
+  .prompt .typed span.pre { color: var(--muted); }
+  .caret { display: inline-block; width: 2px; height: 1.1em; background: var(--green); vertical-align: -3px; animation: blink 1s steps(1) infinite; margin-left: 2px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .prompt .row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .prompt .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .prompt .tags span { font: 500 12px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; }
+  .go { width: 38px; height: 38px; border-radius: 10px; background: var(--green); color: var(--green-ink); display: grid; place-items: center; text-decoration: none; font-size: 18px; }
+  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .chips button { font: 500 14px/1 var(--sans); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; cursor: pointer; color: var(--ink-2); }
+  .chips button:hover { border-color: var(--green); color: var(--green); }
+
+  /* ---------- steps ---------- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr; } }
+  .step { border-right: 1px solid var(--line); padding: 30px; background: var(--paper); }
+  .step:last-child { border-right: 0; }
+  @media (min-width: 861px) { .step:nth-child(2) { margin-top: 110px; } .step:nth-child(3) { margin-top: 220px; } }
+  .step .num { font-family: var(--display); font-size: 54px; color: var(--green); line-height: 1; }
+  .step h3 { font-size: 24px; margin: 18px 0 8px; }
+  .step p { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  .step .card { background: var(--green-soft); border-radius: 12px; padding: 14px; font-size: 13px; }
+  .step .card .inner { background: var(--paper); border-radius: 10px; padding: 10px 12px; box-shadow: 0 1px 0 var(--line); }
+  .step .card .tagrow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .step .card .tagrow span { background: var(--paper); border-radius: 999px; padding: 4px 9px; font-size: 12px; color: var(--green); }
+
+  /* ---------- dark band ---------- */
+  .band { background: var(--night); color: #f2ebe0; }
+  .band .frame { border-color: var(--night-line); }
+  .band .block-head h2, .band h3 { color: #f6efe5; }
+  .band .block-head p { color: #b8ad9e; }
+  .band .eyebrow { color: #8fd8b3; }
+  .nums { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--night-line); }
+  @media (max-width: 860px) { .nums { grid-template-columns: 1fr 1fr; } }
+  .num-cell { padding: 30px 28px 36px; border-right: 1px solid var(--night-line); }
+  .num-cell:last-child { border-right: 0; }
+  .num-cell .big { font-family: var(--display); font-size: clamp(40px, 5vw, 60px); line-height: 1; color: #fff; }
+  .num-cell p { color: #b8ad9e; font-size: 14px; margin: 12px 0 0; }
+  .table { border-top: 1px solid var(--night-line); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; font-size: 15px; }
+  th, td { text-align: left; padding: 16px 20px; border-bottom: 1px solid var(--night-line); vertical-align: top; }
+  th { font-weight: 500; color: #b8ad9e; font-size: 13px; }
+  th.us, td.us { background: #22301f40; color: #fff; }
+  td .y { color: #8fd8b3; } td .n { color: #d79a8b; }
+
+  /* ---------- faq ---------- */
+  .faq { padding-bottom: 80px; }
+  details.q { border-top: 1px solid var(--line); }
+  details.q:last-child { border-bottom: 1px solid var(--line); }
+  details.q summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: 20px; padding: 22px 0; font-family: var(--display); font-size: 21px; }
+  details.q summary::after { content: "+"; font-family: var(--sans); color: var(--green); font-size: 24px; transition: transform .25s; }
+  details.q[open] summary::after { transform: rotate(45deg); }
+  details.q p { color: var(--muted); margin: 0 0 22px; max-width: 70ch; }
+
+  /* ---------- final cta + footer ---------- */
+  .final { position: relative; overflow: hidden; text-align: center; padding: 110px 20px; color: #fff; }
+  .final h2 { color: #fff; font-size: clamp(36px, 5vw, 60px); margin: 0 0 14px; position: relative; }
+  .final p { position: relative; color: rgba(255,255,255,.85); max-width: 46ch; margin: 0 auto 28px; }
+  .final .btn { position: relative; }
+  footer { padding-top: 40px; padding-bottom: 50px; display: flex; justify-content: space-between; gap: 30px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+  footer .cols { display: flex; gap: 60px; flex-wrap: wrap; }
+  footer h6 { font: 600 13px/1 var(--sans); color: var(--ink); margin: 0 0 12px; }
+  footer a { display: block; text-decoration: none; margin-bottom: 8px; }
+  footer a:hover { color: var(--ink); }
+
+  /* ---------- reveal ---------- */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="announce"><a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">Built for the KaneCLI Online Hackathon · <span>see how it was verified →</span></a></div>
+
+<div class="nav-wrap">
+  <div class="frame pad">
+    <nav>
+      <a class="brand" href="#top" aria-label="tzproof home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--green)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--green-ink)" stroke-width="2.4"/><path d="M16 10.5V16l3.6 2.4" stroke="var(--green-ink)" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+        tzproof
+      </a>
+      <div class="links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#proof">Proof</a><a href="#faq">FAQ</a></div>
+      <div class="nav-cta"><a class="muted" href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a><a class="btn primary small" data-app href="/app">Open tzproof</a></div>
+    </nav>
+  </div>
+</div>
+
+<header id="top">
+  <div class="frame pad hero">
+    <div class="proofline reveal"><span class="dots"><i class="ok"></i><i></i><i></i><i></i><i></i></span> 4 of 5 clocks caught on a real run, verified with Kane CLI</div>
+    <h1 class="reveal">Every date, right in <span class="swap" id="swap">Tokyo</span>.</h1>
+    <p class="sub reveal">tzproof opens your web app in a real Chrome that believes it is somewhere else, at some other moment. Kane CLI reads every date. Code checks it. Claude fixes what is wrong.</p>
+    <div class="ctas reveal"><a class="btn primary" data-app href="/app">Open tzproof</a><a class="btn light" href="#watch"><span class="play"></span>Watch it run</a></div>
+    <div class="stats reveal"><span><b>12</b> clocks built in</span><span><b>1</b> attempt to green</span><span><b>0</b> wrong dates let through</span></div>
+  </div>
+
+  <div class="sky" id="watch">
+    <div class="layer sky-dawn on"></div><div class="layer sky-noon"></div><div class="layer sky-dusk"></div><div class="layer sky-night"></div><div class="grain"></div>
+    <div class="sky-inner">
+      <p class="sky-caption">It is <b id="sky-time">8:30 AM in Tokyo</b>. Is your app sure?</p>
+      <div class="window reveal" aria-label="tzproof running a grid">
+        <div class="win-bar">
+          <div class="who"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--green)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--green-ink)" stroke-width="2.4"/><path d="M16 10.5V16l3.6 2.4" stroke="var(--green-ink)" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>tzproof <span class="muted" style="font-family:var(--sans);font-size:13px">billing page · 5 clocks</span></div>
+          <span class="pill" id="win-pill"><i></i>Kane is testing</span>
+        </div>
+        <div class="win-body">
+          <aside class="win-side">
+            <h5>Where and when</h5>
+            <div id="side"></div>
+          </aside>
+          <div class="win-main">
+            <div class="bubble">Check Today, Trial ends and Next invoice.</div>
+            <div class="agent-line"><span class="av"><svg width="14" height="14" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="none" stroke="#fff" stroke-width="3"/><path d="M16 10v6l4 3" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg></span><span id="agent-say">Kane is opening Chrome in each time zone…</span></div>
+            <div class="cells" id="cells"></div>
+            <div class="verdict-bar"><span id="verdict-text">Every result comes from a real Kane CLI run.</span><a class="btn primary small" data-app href="/app">Run it yourself</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="marquee" aria-label="Works with">
+  <div class="track">
+    <span>Kane CLI <i>verifies</i></span><span>Claude Code <i>fixes</i></span><span>Real Chrome <i>runs</i></span><span>GitHub Actions <i>gates</i></span><span>Cursor <i>agent</i></span><span>Codex <i>agent</i></span><span>Any web app <i>tests</i></span>
+    <span>Kane CLI <i>verifies</i></span><span>Claude Code <i>fixes</i></span><span>Real Chrome <i>runs</i></span><span>GitHub Actions <i>gates</i></span><span>Cursor <i>agent</i></span><span>Codex <i>agent</i></span><span>Any web app <i>tests</i></span>
+  </div>
+</div>
+
+<section class="block" id="features">
+  <div class="frame">
+    <div class="pad block-head reveal"><div class="eyebrow">What it does</div><h2>Date bugs hide in someone else’s morning.</h2><p>They pass every test on your laptop, at your time of day. tzproof goes where they live.</p></div>
+
+    <div class="feature">
+      <div class="pad reveal"><h3>Catch the day that is off by one.</h3><p>In Tokyo at 8:30 AM it is already Tuesday. Your page says Monday, because <span class="mono">toISOString()</span> gave it the UTC day. tzproof sees it.</p></div>
+      <div class="fsky reveal"><div class="layer sky-dawn"></div><div class="grain"></div>
+        <div class="float">
+          <div class="fbar"><span>Grid › <b>Tokyo · 8:30 AM</b></span><span class="pill red"><i></i>FAIL</span></div>
+          <div class="fbody">
+            <div class="compare"><div class="bad"><small>Page showed</small><b>2026-06-15</b></div><div class="good"><small>Should be</small><b>2026-06-16</b></div></div>
+            <div class="agent-note">“today” is one day behind for a user in Asia/Tokyo on Tue, Jun 16, 8:30 AM. Trial end and next invoice are right.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="pad reveal"><h3>See exactly what Kane saw.</h3><p>Every cell keeps Kane’s own screenshot from that clock, the dates it read and its steps, sealed in a Kane evidence pack.</p></div>
+      <div class="fsky reveal"><div class="layer sky-noon"></div><div class="grain"></div>
+        <div class="float">
+          <div class="fbar"><span>Evidence › <b>London · 00:30 in summer</b></span><span class="pill red"><i></i>1 day behind</span></div>
+          <div class="fbody">
+            <div class="shot" role="img" aria-label="Kane's screenshot of the billing page at 00:30 in London: Today shows 2026-04-09" style="background-image:url('kane-london.jpg')"></div>
+            <div class="agent-note"><b>Kane’s own check said PASS.</b> tzproof compared the date Kane read with the right one and said FAIL. In our runs Kane passed a wrong date in 1 of 5 cells. The code never did.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="pad reveal"><h3>Let Claude fix it, then prove it.</h3><p>Red cells and Kane’s evidence go to Claude Code. It may edit only your app. Then every clock runs again, so a fix for Tokyo cannot quietly break New York.</p></div>
+      <div class="fsky reveal"><div class="layer sky-dusk"></div><div class="grain"></div>
+        <div class="float">
+          <div class="fbar"><span>Fix 1 › <b>Claude Code</b></span><span class="pill"><i></i>5 of 5 green</span></div>
+          <div class="fbody">
+            <div class="agent-note">Root cause: “Today” came from <span class="mono">toISOString()</span>, the UTC date. “Next invoice” used <span class="mono">setMonth(+1)</span>, so 31 January became 3 March.</div>
+<pre class="diff"><span class="r">-  const isoDay = now.toISOString().slice(0, 10);</span>
+<span class="a">+  const isoDay = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;</span>
+<span class="r">-  invoice.setMonth(invoice.getMonth() + 1);</span>
+<span class="a">+  const invoice = new Date(y, m, Math.min(now.getDate(), lastDay));</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div class="pad reveal"><h3>No more “done” while a clock is red.</h3><p>As a Claude Code Stop hook, tzproof runs the grid every time the agent tries to finish, and sends it back to work until every clock is green.</p></div>
+      <div class="fsky reveal"><div class="layer sky-night"></div><div class="grain"></div>
+        <div class="float">
+          <div class="fbar"><span>Claude Code › <b>Stop hook</b></span><span class="pill"><i></i>allowed to stop</span></div>
+          <div class="fbody">
+<div class="term"><span class="m">$ claude "rename the heading to Account overview"</span>
+✓ Heading changed. Done.
+<span class="r">✗ tzproof: 4 clocks show a wrong date. Not done yet.</span>
+  Tokyo 8:30 AM   today shows 2026-06-15, should be 2026-06-16
+  31 January      next invoice March 3, should be Feb 28
+✓ Fixed toISOString and setMonth.
+<span class="g">✓ tzproof: 5 pass · 0 fail. Stop allowed.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:56px"></div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="frame pad ask">
+    <div class="eyebrow reveal">Start with a date</div>
+    <h2 class="reveal">What should tzproof check first?</h2>
+    <p class="reveal">Say where the date is, in plain English. Kane finds it on the page, at every clock you pick.</p>
+    <div class="prompt reveal">
+      <div class="typed"><span class="pre">Kane, check </span><span id="typed"></span><span class="caret"></span></div>
+      <div class="row"><div class="tags"><span>Tokyo</span><span>London · summer</span><span>31 Jan</span><span>Leap day</span></div><a class="go" data-app href="/app" aria-label="Open tzproof">↑</a></div>
+    </div>
+    <div class="chips reveal" id="chips">
+      <button type="button">the delivery date at checkout</button><button type="button">when my free trial ends</button><button type="button">the date on today’s invoice</button><button type="button">event times in the user’s zone</button><button type="button">the due date on a task</button>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="how">
+  <div class="frame">
+    <div class="pad block-head reveal"><div class="eyebrow">How it works</div><h2>Three steps. <span class="muted">No test code, no fake clocks in your app.</span></h2></div>
+    <div class="steps">
+      <div class="step reveal"><div class="num">01</div><h3>Paste your site</h3><p>Any public web address, or your own app on localhost with the CLI.</p><div class="card"><div class="inner mono">https://your-site.com/checkout</div></div></div>
+      <div class="step reveal"><div class="num">02</div><h3>Pick where and when</h3><p>Twelve clocks built in, from Tokyo mornings to the night daylight saving starts.</p><div class="card"><div class="inner">Delivery date should be <b>today + 3 days</b></div><div class="tagrow"><span>Tokyo 8:30 AM</span><span>Leap day</span><span>New Year’s Eve</span></div></div></div>
+      <div class="step reveal"><div class="num">03</div><h3>Read, judge, fix</h3><p>Kane reads every date in a real Chrome, code judges it, and Claude fixes what is red.</p><div class="card"><div class="inner"><b>4 of 5 clocks</b> show a wrong date</div><div class="tagrow"><span>Fix with Claude</span><span>Copy share link</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="proof">
+  <div class="frame">
+    <div class="pad block-head reveal"><div class="eyebrow">Proof, not promises</div><h2>Real runs. Real numbers.</h2><p>Every number here comes from runs committed to the repo, with Kane’s raw output next to it.</p></div>
+    <div class="nums">
+      <div class="num-cell reveal"><div class="big"><span data-count="4">0</span>/5</div><p>clocks showed a wrong date on the demo billing page</p></div>
+      <div class="num-cell reveal"><div class="big"><span data-count="1">0</span></div><p>attempt for Claude Code to fix both root causes from Kane’s evidence alone</p></div>
+      <div class="num-cell reveal"><div class="big">1 in <span data-count="5">0</span></div><p>cells where Kane’s own check passed a wrong date. The code caught every one.</p></div>
+      <div class="num-cell reveal"><div class="big"><span data-count="12">0</span></div><p>clocks built in: half-hour offsets, leap days, the night 2 AM doesn’t exist</p></div>
+    </div>
+    <div class="table reveal">
+      <table>
+        <thead><tr><th></th><th>Unit tests</th><th>Browser test today</th><th>Manual QA</th><th class="us">tzproof</th></tr></thead>
+        <tbody>
+          <tr><td>Runs in the user’s time zone</td><td><span class="n">Only if mocked</span></td><td><span class="n">Your zone only</span></td><td><span class="n">Rarely</span></td><td class="us"><span class="y">Every zone you pick</span></td></tr>
+          <tr><td>Sees what the user sees</td><td><span class="n">No</span></td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td class="us"><span class="y">Yes, with Kane’s screenshot</span></td></tr>
+          <tr><td>Knows the right date</td><td><span class="y">If you wrote it</span></td><td><span class="n">If you wrote it</span></td><td><span class="n">By eye</span></td><td class="us"><span class="y">Computed for every clock</span></td></tr>
+          <tr><td>Fixes it and proves the fix</td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td class="us"><span class="y">Claude fixes, every clock re-runs</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="height:70px"></div>
+  </div>
+</section>
+
+<section class="block" id="faq">
+  <div class="frame pad faq">
+    <div class="block-head reveal" style="padding-left:0"><div class="eyebrow">FAQ</div><h2>Questions</h2></div>
+    <details class="q reveal"><summary>Does it change anything in my app?</summary><p>No. tzproof changes the browser, not your app: Chrome starts in the time zone you pick, and the page’s clock is moved before any of your code runs. Your server keeps its own clock.</p></details>
+    <details class="q reveal"><summary>Why not trust Kane’s own pass or fail?</summary><p>Kane is great at using a page like a person, and tzproof asks it to check each date too. But in our real runs its own check passed a wrong date in 1 of 5 cells. So tzproof takes the dates Kane read and compares them with the right calendar day in code. When they disagree, the cell says so.</p></details>
+    <details class="q reveal"><summary>Can Claude fix my site from here?</summary><p>Live fixes run on our demo app, where Claude may edit only a private copy. For your own site, tzproof gives you the exact prompt with Kane’s evidence for every red cell, and a Stop hook so your coding agent can’t finish while a clock is red.</p></details>
+    <details class="q reveal"><summary>What does it cost?</summary><p>tzproof is free and open source (MIT). Each cell is one Kane CLI run, about 15 to 30 Kane credits. The hosted version has a small daily allowance; install it to use your own Kane account.</p></details>
+    <details class="q reveal"><summary>What can’t it do yet?</summary><p>It moves the browser’s clock, not your server’s. Code that reads time without <span class="mono">Date</span> is not moved. And the hosted version tests public sites only; use the CLI for localhost.</p></details>
+  </div>
+</section>
+
+<section class="final">
+  <div class="layer sky-dusk" style="position:absolute;inset:0"></div><div class="grain"></div>
+  <h2 class="reveal">Make every clock green.</h2>
+  <p class="reveal">Paste your site. Pick the places and times. Watch Kane find the dates that are wrong.</p>
+  <a class="btn primary reveal" data-app href="/app">Open tzproof</a>
+</section>
+
+<div class="frame pad">
+  <footer>
+    <div><a class="brand" href="#top" style="margin-bottom:10px">tzproof</a><span>MIT · built for the KaneCLI Online Hackathon</span></div>
+    <div class="cols">
+      <div><h6>Product</h6><a data-app href="/app">Open tzproof</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
+      <div><h6>Code</h6><a href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/Milliebanned/tzproof/tree/main/examples/stop-hook" target="_blank" rel="noopener">Stop hook</a><a href="https://github.com/Milliebanned/tzproof#readme" target="_blank" rel="noopener">README</a></div>
+      <div><h6>Built with</h6><a href="https://github.com/LambdaTest/kane-cli" target="_blank" rel="noopener">Kane CLI</a><a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">The hackathon</a></div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  // On the GitHub Pages copy, "Open tzproof" goes to the hosted app.
+  const APP_URL = location.hostname.endsWith('github.io') ? 'https://tzproof.fly.dev/app' : '/app';
+  document.querySelectorAll('[data-app]').forEach(a => { a.href = APP_URL; });
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('in');
+    io.unobserve(e.target);
+    e.target.querySelectorAll('[data-count]').forEach(countUp);
+  }), { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach((el, i) => { el.style.transitionDelay = `${(i % 4) * 70}ms`; io.observe(el); });
+
+  function countUp(el) {
+    const end = Number(el.dataset.count);
+    if (reduce) { el.textContent = end; return; }
+    const t0 = performance.now();
+    const step = (t) => { const p = Math.min(1, (t - t0) / 1100); el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+
+  // Headline: the place changes
+  const places = ['Tokyo', 'London', 'Sydney', 'Honolulu', 'Mumbai', 'New York'];
+  let pi = 0;
+  const swap = document.getElementById('swap');
+  if (!reduce) setInterval(() => {
+    swap.classList.add('out');
+    setTimeout(() => { pi = (pi + 1) % places.length; swap.textContent = places[pi]; swap.classList.remove('out'); }, 350);
+  }, 2400);
+
+  // Hero product: replays a real run (quickstart grid, committed in the repo)
+  const RUN = [
+    { city: 'New York', when: 'Mon 2:00 PM', sky: 1, verdict: 'pass', note: 'Every date right', caption: '2:00 PM in New York' },
+    { city: 'Tokyo', when: 'Tue 8:30 AM', sky: 0, verdict: 'fail', note: 'Today shows <b>Jun 15</b>, should be Jun 16', caption: '8:30 AM in Tokyo' },
+    { city: 'Los Angeles', when: 'Mon 9:30 PM', sky: 2, verdict: 'fail', note: 'Today shows <b>Jun 16</b>, should be Jun 15', caption: '9:30 PM in Los Angeles' },
+    { city: 'London', when: 'Fri 00:30 BST', sky: 3, verdict: 'fail', note: 'Today shows <b>Apr 9</b>, should be Apr 10', caption: '00:30 in London, in summer' },
+    { city: 'New York', when: 'Sun 31 Jan', sky: 1, verdict: 'fail', note: 'Invoice <b>Mar 3</b>, should be Feb 28', caption: 'noon on 31 January' },
+  ];
+  const side = document.getElementById('side');
+  const cells = document.getElementById('cells');
+  side.innerHTML = RUN.map((r, i) => `<div class="clockrow" data-i="${i}"><div>${r.city}<small>${r.when}</small></div><span class="dot"></span></div>`).join('');
+  const layers = [...document.querySelectorAll('#watch .layer')];
+  function resetGrid() {
+    cells.innerHTML = RUN.map(r => `<div class="mcell"><div class="t">${r.city}</div><div class="w">${r.when}</div><div class="v">QUEUED</div><div class="d"></div></div>`).join('');
+    side.querySelectorAll('.dot').forEach(d => { d.className = 'dot'; });
+    document.getElementById('win-pill').className = 'pill';
+    document.getElementById('win-pill').innerHTML = '<i></i>Kane is testing';
+    document.getElementById('agent-say').textContent = 'Kane is opening Chrome in each time zone…';
+  }
+  function showCell(i, phase) {
+    const r = RUN[i];
+    const c = cells.children[i];
+    const row = side.children[i];
+    side.querySelectorAll('.clockrow').forEach(x => x.classList.toggle('on', x === row));
+    layers.forEach((l, k) => l.classList.toggle('on', k === r.sky));
+    document.getElementById('sky-time').textContent = `${r.caption}`;
+    if (phase === 'run') {
+      c.className = 'mcell run'; c.querySelector('.v').textContent = 'KANE IS ON IT'; c.querySelector('.d').textContent = 'Reading the dates…';
+      row.querySelector('.dot').className = 'dot run';
+      document.getElementById('agent-say').textContent = `Kane is using the page as a user in ${r.city}…`;
+    }
+    else {
+      c.className = `mcell ${r.verdict}`; c.querySelector('.v').textContent = r.verdict.toUpperCase(); c.querySelector('.d').innerHTML = r.note;
+      row.querySelector('.dot').className = `dot ${r.verdict}`;
+    }
+  }
+  async function loop() {
+    const wait = ms => new Promise(res => setTimeout(res, ms));
+    for (;;) {
+      resetGrid();
+      await wait(900);
+      for (let i = 0; i < RUN.length; i++) { showCell(i, 'run'); await wait(1300); showCell(i, 'done'); await wait(700); }
+      const pill = document.getElementById('win-pill');
+      pill.className = 'pill red'; pill.innerHTML = '<i></i>4 of 5 wrong';
+      document.getElementById('agent-say').textContent = 'tzproof checked every date. Claude can fix them now.';
+      await wait(4200);
+    }
+  }
+  if (reduce) { resetGrid(); RUN.forEach((_, i) => showCell(i, 'done')); } else loop();
+
+  // Prompt typing
+  const prompts = ['the delivery date at checkout', 'when my free trial ends', 'the date on today’s invoice', 'event times in the user’s zone', 'the due date on a task'];
+  const typed = document.getElementById('typed');
+  let tIndex = 0, tTimer;
+  function typeText(text) {
+    clearTimeout(tTimer);
+    if (reduce) { typed.textContent = text; return; }
+    let n = 0;
+    const tick = () => { typed.textContent = text.slice(0, ++n); if (n < text.length) tTimer = setTimeout(tick, 38); else tTimer = setTimeout(() => typeText(prompts[tIndex = (tIndex + 1) % prompts.length]), 2600); };
+    typed.textContent = ''; tick();
+  }
+  typeText(prompts[0]);
+  document.getElementById('chips').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { tIndex = prompts.indexOf(e.target.textContent); typeText(e.target.textContent); } });
+</script>
+</body>
+</html>

@@ -19,14 +19,16 @@ function listFiles(root, base = root, out = []) {
   return out;
 }
 
-function hashTree(root, exclude) {
-  const hashes = new Map();
+/** Snapshot of every protected file (outside the agent's folder): its hash and, for restoring, its bytes. */
+function snapshotTree(root, exclude) {
+  const files = new Map();
   for (const file of listFiles(root)) {
     const full = join(root, file);
     if (exclude.some(ex => full === ex || full.startsWith(`${ex}/`))) continue;
-    hashes.set(file, createHash('sha256').update(readFileSync(full)).digest('hex'));
+    const bytes = readFileSync(full);
+    files.set(file, { hash: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length <= 2_000_000 ? bytes : null });
   }
-  return hashes;
+  return files;
 }
 
 function localTime(at, tz) {
@@ -126,7 +128,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
     log(`\n=== attempt ${n}: handing ${current.results.summary.fail} failing cell(s) to the agent ===`);
     const before = join(outDir, `.snapshot-${n}`);
     cpSync(editDir, before, { recursive: true });
-    const guardBefore = hashTree(protectedRoot, [editDir, outDir]);
+    const guardBefore = snapshotTree(protectedRoot, [editDir, outDir]);
 
     const prompt = buildPrompt(current.results, editDir, protectedNote);
     writeFileSync(join(outDir, `attempt-${n}-prompt.md`), prompt);
@@ -135,9 +137,9 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
     log(`agent: ${agent.text.replace(/\s+/g, ' ').slice(0, 300)}`);
 
     // Guard: anything outside the app folder that changed is restored and the attempt is rejected.
-    const guardAfter = hashTree(protectedRoot, [editDir, outDir]);
+    const guardAfter = snapshotTree(protectedRoot, [editDir, outDir]);
     const tampered = [...new Set([...guardBefore.keys(), ...guardAfter.keys()])]
-      .filter(f => guardBefore.get(f) !== guardAfter.get(f));
+      .filter(f => guardBefore.get(f)?.hash !== guardAfter.get(f)?.hash);
 
     const diff = spawnSync('git', ['diff', '--no-index', '--no-color', before, editDir], { encoding: 'utf8' }).stdout
       .replaceAll(`a${before}`, 'a').replaceAll(`b${editDir}`, 'b').replaceAll(before, '').replaceAll(editDir, '');
@@ -146,7 +148,14 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
     emit('agent-done', { attempt: n, text: agent.text, cost: agent.cost, diff, rejected: tampered.length > 0, tampered });
     if (tampered.length) {
       log(`✗ rejected: the agent changed protected files: ${tampered.join(', ')}`);
-      spawnSync('git', ['checkout', '--', ...tampered], { cwd: protectedRoot });
+      // Put each file back exactly as it was before this attempt (never from git: that would also drop
+      // a developer's own uncommitted work).
+      for (const file of tampered) {
+        const was = guardBefore.get(file);
+        const full = join(protectedRoot, file);
+        if (!was) rmSync(full, { force: true });
+        else if (was.bytes) writeFileSync(full, was.bytes);
+      }
       rmSync(editDir, { recursive: true, force: true });
       cpSync(before, editDir, { recursive: true });
       attempts.push({ attempt: n, rejected: true, tampered, agent: agent.text, agentCost: agent.cost, diff: `attempt-${n}.diff` });

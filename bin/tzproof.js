@@ -78,9 +78,14 @@ async function main() {
   }
 
   if (command === 'ui') {
-    const studio = await startStudio({ configPath: target, port: args.port || 4321 });
+    const isPublic = process.env.TZPROOF_PUBLIC === '1';
+    const studio = await startStudio({
+      configPath: target,
+      port: args.port || Number(process.env.PORT) || 4321,
+      host: process.env.HOST || (isPublic ? '0.0.0.0' : '127.0.0.1'),
+    });
     console.log(`tzproof Studio: ${studio.url}  (Ctrl+C to stop)`);
-    if (!args.noOpen) {
+    if (!args.noOpen && !isPublic) {
       const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
       spawn(opener, [studio.url], { stdio: 'ignore', shell: process.platform === 'win32', detached: true }).unref();
     }

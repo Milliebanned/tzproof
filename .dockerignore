@@ -1,0 +1,6 @@
+node_modules
+tzproof-runs
+.tzproof
+.git
+docs/*.png
+examples/*/runs
