@@ -32,16 +32,23 @@ function sourceFiles(dir) {
 const PREFERRED = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
 
 async function generate(key, model, request) {
-  const res = await fetch(`${API}/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: request }] }],
-      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-    }),
-  });
-  const body = await res.json().catch(() => ({}));
-  return { status: res.status, ok: res.ok, body };
+  // A dropped connection or a slow answer counts as "busy": the caller retries and then tries the next model.
+  try {
+    const res = await fetch(`${API}/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      signal: AbortSignal.timeout(150_000),
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: request }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    return { status: res.status, ok: res.ok, body };
+  }
+  catch (err) {
+    return { status: 503, ok: false, body: { error: { message: `network: ${err.cause?.code || err.name || err.message}` } } };
+  }
 }
 
 /**
@@ -65,11 +72,15 @@ Only include files you changed, with their complete new content.`;
     let model;
     let body;
     let lastError = 'no model answered';
-    for (const m of models) {
-      const r = await generate(key, m, request);
-      if (r.ok) { model = m; body = r.body; break; }
-      lastError = `${m}: ${r.status} ${r.body.error?.message?.slice(0, 120) || ''}`;
-      if (![404, 429, 500, 503].includes(r.status)) break;
+    outer: for (const m of models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const r = await generate(key, m, request);
+        if (r.ok) { model = m; body = r.body; break outer; }
+        lastError = `${m}: ${r.status} ${r.body.error?.message?.slice(0, 120) || ''}`;
+        if (r.status === 404) break;
+        if (![429, 500, 503].includes(r.status)) break outer;
+        await new Promise(res => setTimeout(res, 4000));
+      }
     }
     if (!body) throw new Error(`Gemini could not be reached (${lastError})`);
     const raw = body.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
