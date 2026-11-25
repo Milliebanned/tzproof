@@ -176,7 +176,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
     log(`\n=== re-running the whole grid after attempt ${n} ===`);
     current = await grid(`${n}-after-fix`);
     attempts.push({
-      attempt: n, agent: agent.text, agentCost: agent.cost, diff: `attempt-${n}.diff`, prompt: `attempt-${n}-prompt.md`,
+      attempt: n, agent: agent.text, agentName: config.fix.agent === 'gemini' ? 'Gemini' : 'Claude Code', agentCost: agent.cost, diff: `attempt-${n}.diff`, prompt: `attempt-${n}-prompt.md`,
       run: current.dir, summary: current.results.summary,
     });
   }

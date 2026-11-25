@@ -254,6 +254,8 @@ function onEvent({ type, data }, ctx) {
 }
 
 function renderAgent(jobId, data) {
+  // Older saved runs don't record who fixed them; the fixer's own message names Gemini when it was Gemini.
+  data.agent = data.agent || (/\bGemini\b/.test(data.text || '') ? 'Gemini' : 'Claude Code');
   let card = document.getElementById(`attempt-${jobId}-${data.attempt}`);
   if (!card) {
     card = document.createElement('div');
@@ -362,7 +364,7 @@ async function openSaved(id) {
       return;
     }
     for (const a of (saved.loop?.attempts || []).filter(x => x.attempt > 0)) {
-      renderAgent(id, { attempt: a.attempt, text: a.agent, diff: a.diffText, rejected: a.rejected, tampered: a.tampered || [] });
+      renderAgent(id, { attempt: a.attempt, agent: a.agentName, text: a.agent, diff: a.diffText, rejected: a.rejected, tampered: a.tampered || [] });
       const grid = saved.grids?.find(x => x.attempt === a.attempt);
       if (grid) showSavedGrid(`${id}:${grid.name}`, `Every clock again, after fix ${a.attempt}`, grid.results, `/runs/${id}/${grid.name}`);
     }
