@@ -115,7 +115,7 @@ async function startRun(body) {
 
 function prepareResults(title) {
   $('#results').hidden = false;
-  $('#results-title').textContent = 'Kane is testing';
+  $('#results-title').textContent = 'Testing your page…';
   $('#results-sub').textContent = title;
   $('#grids').innerHTML = '';
   $('#policy').hidden = true;
@@ -184,7 +184,7 @@ function onEvent({ type, data }, ctx) {
   const statusEl = $('#status');
   if (type === 'queued') statusEl.textContent = data.position > 0 ? `In the queue: ${data.position} run${data.position === 1 ? '' : 's'} ahead of you. This page updates by itself.` : 'Starting…';
   if (type === 'grid-start') {
-    statusEl.textContent = 'Kane is opening a real Chrome at each place and time.';
+    statusEl.textContent = 'Opening your page in each time zone, in a real browser.';
     if (ctx.kind === 'run') makeGrid('run', '', ctx.clocks, ctx.flows, `/runs/${ctx.jobId}`);
     else makeGrid(`${ctx.jobId}:${data.name}`, `Every clock again, after fix ${String(data.name).split('-')[0]}`, ctx.clocks, ctx.flows, `/runs/${ctx.jobId}/${data.name}`);
   }
@@ -193,7 +193,7 @@ function onEvent({ type, data }, ctx) {
     const el = cellEl(grid, data.id);
     if (el) {
       el.className = 'cell running';
-      el.querySelector('.v').innerHTML = '<span class="spinner"></span>KANE IS ON IT';
+      el.querySelector('.v').innerHTML = '<span class="spinner"></span>CHECKING';
       el.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="live">Opening Chrome at this place and time…</div>');
     }
     updateSummary(grid);
@@ -210,7 +210,7 @@ function onEvent({ type, data }, ctx) {
   if (type === 'grid-done' && grid) {
     const { pass, fail, unknown } = data.summary;
     if (ctx.kind === 'run') {
-      $('#results-title').textContent = fail ? `${fail} of ${pass + fail + unknown} clocks show a wrong date` : unknown ? 'No wrong dates, but some clocks are unproven' : 'Every date is right, at every clock';
+      $('#results-title').textContent = fail ? `Wrong date in ${fail} of ${pass + fail + unknown} time zones` : unknown ? 'No wrong dates found, but some time zones couldn’t be checked' : 'Every date is right in every time zone';
       $('#report').href = `/runs/${ctx.jobId}/report.html`;
       $('#report').hidden = false;
       $('#evidence').hidden = !data.evidence?.merged;
@@ -245,7 +245,7 @@ function onEvent({ type, data }, ctx) {
     if (ctx.kind === 'fix') {
       const done = document.createElement('div');
       done.className = 'attempt';
-      done.innerHTML = data.status === 'green' ? '<div class="final green">✅ Every clock is green.</div>' : '<div class="final amber">Still red after the last attempt. Over to a human.</div>';
+      done.innerHTML = data.status === 'green' ? '<div class="final green">✅ Every date is right now, in every time zone.</div>' : '<div class="final amber">Still red after the last attempt. Over to a human.</div>';
       $('#grids').appendChild(done);
       done.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
