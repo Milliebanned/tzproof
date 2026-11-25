@@ -36,7 +36,7 @@ a { color: inherit; }
 .nav-wrap { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--cream) 85%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-size: 24px; }
-.brand svg { width: 26px; height: 26px; }
+.brand svg { width: 30px; height: 30px; color: var(--ink); }
 .nav-right { display: flex; gap: 18px; align-items: center; font-size: 14px; color: var(--ink-2); }
 .nav-right a { text-decoration: none; }
 .chip { font: 500 12px/1 var(--mono); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); background: var(--paper); }

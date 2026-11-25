@@ -30,6 +30,7 @@ export function renderReport(results) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tzproof report</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22%3E%3Crect width=%2248%22 height=%2248%22 rx=%2212%22 fill=%22%231d1813%22/%3E%3Ccircle cx=%2219%22 cy=%2224%22 r=%2213%22 fill=%22none%22 stroke=%22%23f6f1e8%22 stroke-width=%223%22/%3E%3Ccircle cx=%2229%22 cy=%2224%22 r=%2213%22 fill=%22none%22 stroke=%22%23f6f1e8%22 stroke-width=%223%22/%3E%3Cpath d=%22M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z%22 fill=%22%237fd1a6%22/%3E%3C/svg%3E">
 <style>
   :root { --bg:#fff; --fg:#1b1b1f; --muted:#6b6b76; --line:#e4e4ea; --pass:#e7f6ec; --pass-fg:#156b35; --fail:#fdecec; --fail-fg:#a3201e; --unk:#f4f1e6; --unk-fg:#7a5c00; }
   @media (prefers-color-scheme: dark) { :root { --bg:#141417; --fg:#ececf1; --muted:#9a9aa6; --line:#2c2c33; --pass:#11301d; --pass-fg:#7fdc9f; --fail:#3a1515; --fail-fg:#ff9a96; --unk:#332b12; --unk-fg:#f1cf6b; } }
@@ -54,7 +55,7 @@ export function renderReport(results) {
 </style>
 </head>
 <body>
-<h1>tzproof report</h1>
+<h1 style="display:flex;gap:10px;align-items:center"><svg viewBox="0 0 48 48" width="30" height="30" aria-hidden="true"><circle cx="19" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="29" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z" fill="#3fae7a"/></svg>tzproof report</h1>
 <div class="meta">${esc(results.app)} · ${esc(results.startedAt)} · ${results.cells.length} cells · ${credits ? `${credits.toFixed(1)} Kane credits` : ''}</div>
 ${results.evidence?.merged ? `<div class="meta">Kane evidence: one sealed pack for the grid (<code>${esc(results.evidence.pack)}</code>, ${results.evidence.packs} runs) · policy <code>${esc(results.evidence.policy)}</code>: <strong>${esc(results.evidence.policyVerdict.toUpperCase())}</strong>${(results.evidence.policyDetail.match(/\(([^)]*)\)\s*$/) || [])[1] ? ` (failed gate: ${esc(results.evidence.policyDetail.match(/\(([^)]*)\)\s*$/)[1])})` : ''} · open with <code>kane-cli evidence serve ${esc(results.evidence.pack)}</code></div>` : ''}
 <div class="totals"><span style="color:var(--pass-fg)">${pass} pass</span><span style="color:var(--fail-fg)">${fail} fail</span><span style="color:var(--unk-fg)">${unknown} unknown</span></div>

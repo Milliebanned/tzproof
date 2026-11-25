@@ -1,3 +1,5 @@
+<p><img src="docs/logo.svg" width="56" alt=""></p>
+
 # tzproof
 
 **Is your app right in every time zone, on every date?**
