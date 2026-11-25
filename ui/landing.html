@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tzproof</title>
-<meta name="description" content="tzproof checks whether your website shows the right date to people in other time zones, and fixes it when it doesn’t.">
-<meta property="og:title" content="tzproof: does your website show the right date in every time zone?">
+<meta name="description" content="Time bugs skip payments, book the wrong day and end trials early, but only for users in other time zones. tzproof runs your real flows at those moments in a real browser, shows what broke, and fixes it.">
+<meta property="og:title" content="tzproof: find the time bugs before your users do">
 <meta property="og:image" content="https://milliebanned.github.io/tzproof/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta property="og:description" content="Paste a link. tzproof shows you which dates are wrong for users in other time zones, then fixes them.">
+<meta property="og:description" content="Payments that skip a month, bookings on the wrong day, trials that end early. tzproof runs your flows at the moments these bugs happen, and fixes them.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22%3E%3Crect width=%2248%22 height=%2248%22 rx=%2212%22 fill=%22%231d1813%22/%3E%3Ccircle cx=%2219%22 cy=%2224%22 r=%2213%22 fill=%22none%22 stroke=%22%23f6f1e8%22 stroke-width=%223%22/%3E%3Ccircle cx=%2229%22 cy=%2224%22 r=%2213%22 fill=%22none%22 stroke=%22%23f6f1e8%22 stroke-width=%223%22/%3E%3Cpath d=%22M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z%22 fill=%22%237fd1a6%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -162,6 +162,24 @@
   .track span i { font-style: normal; font-family: var(--mono); font-size: 12px; border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
   @keyframes slide { to { transform: translateX(-50%); } }
 
+  /* ---------- what breaks ---------- */
+  .breaks { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  @media (max-width: 860px) { .breaks { grid-template-columns: 1fr; } }
+  .brk { padding: 28px 30px 32px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--paper); }
+  .brk:nth-child(3n) { border-right: 0; }
+  .brk .ic { width: 38px; height: 38px; border-radius: 10px; background: var(--red-soft); color: var(--red); display: grid; place-items: center; font-size: 18px; margin-bottom: 16px; }
+  .brk h3 { font-size: 22px; margin: 0 0 6px; }
+  .brk p { color: var(--muted); margin: 0; font-size: 15px; }
+
+  /* ---------- kane section ---------- */
+  .kane { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+  @media (max-width: 860px) { .kane { grid-template-columns: 1fr; } }
+  .kn { padding: 26px 30px 30px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .kn:nth-child(3n) { border-right: 0; }
+  .kn .tag { font: 500 12px/1 var(--mono); color: var(--green); background: var(--green-soft); border-radius: 6px; padding: 5px 8px; display: inline-block; margin-bottom: 14px; }
+  .kn h3 { font-size: 21px; margin: 0 0 6px; }
+  .kn p { color: var(--muted); margin: 0; font-size: 15px; }
+
   /* ---------- feature sections ---------- */
   section.block { border-bottom: 1px solid var(--line); }
   .block-head { padding-top: 72px; padding-bottom: 26px; max-width: 760px; }
@@ -277,7 +295,6 @@
 </head>
 <body>
 
-<div class="announce"><a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">Built for the KaneCLI Online Hackathon · <span>see how it was verified →</span></a></div>
 
 <div class="nav-wrap">
   <div class="frame pad">
@@ -286,7 +303,7 @@
         <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="19" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="29" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z" fill="var(--logo-accent, #3fae7a)"/></svg>
         tzproof
       </a>
-      <div class="links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#proof">Proof</a><a href="#faq">FAQ</a></div>
+      <div class="links"><a href="#breaks">What breaks</a><a href="#how">How it works</a><a href="#kane">Kane CLI</a><a href="#proof">Results</a><a href="#faq">FAQ</a></div>
       <div class="nav-cta"><a class="muted" href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a><a class="btn primary small" data-app href="/app">Test my website</a></div>
     </nav>
   </div>
@@ -294,9 +311,9 @@
 
 <header id="top">
   <div class="frame pad hero">
-    <div class="proofline reveal"><span class="dots"><i class="ok"></i><i></i><i></i><i></i><i></i></span> On our demo page it found a wrong date in 4 of 5 time zones</div>
-    <h1 class="reveal">Does your website show the right date in <span class="swap" id="swap">Tokyo</span>?</h1>
-    <p class="sub reveal">Paste a link. tzproof opens your page the way people in Tokyo, London or Los Angeles see it at different times of day, and lists every date that’s wrong. Then AI fixes your code.</p>
+    <div class="proofline reveal"><span class="dots"><i class="ok"></i><i></i><i></i><i></i><i></i></span> Tested at 12 risky moments: midnight in Tokyo, leap day, the night clocks change</div>
+    <h1 class="reveal">Your app breaks at midnight in <span class="swap" id="swap">Tokyo</span>.</h1>
+    <p class="sub reveal">Payments that skip a month. Bookings on the wrong day. Trials that end early. tzproof runs your real user flows at the times and places these bugs happen, shows you what broke, and fixes the code.</p>
     <div class="ctas reveal"><a class="btn primary" data-app href="/app">Test my website</a><a class="btn light" href="#watch"><span class="play"></span>See an example</a></div>
     <div class="stats reveal"><span><b>12</b> time zones and tricky dates built in</span><span>Free and open source</span><span>No code to write</span></div>
   </div>
@@ -308,7 +325,7 @@
   <div class="sky" id="watch">
     <div class="layer sky-dawn on"></div><div class="layer sky-noon"></div><div class="layer sky-dusk"></div><div class="layer sky-night"></div><div class="grain"></div>
     <div class="sky-inner">
-      <p class="sky-caption">It’s <b id="sky-time">8:30 AM in Tokyo</b>. What date does your website show?</p>
+      <p class="sky-caption">It’s <b id="sky-time">8:30 AM in Tokyo</b>. Does your app still work?</p>
       <div class="window reveal" aria-label="tzproof running a grid">
         <div class="win-bar">
           <div class="who"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="19" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="29" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z" fill="var(--logo-accent, #3fae7a)"/></svg>tzproof <span class="muted" style="font-family:var(--sans);font-size:13px">billing page · 5 clocks</span></div>
@@ -338,12 +355,26 @@
   </div>
 </div>
 
+<section class="block" id="breaks">
+  <div class="frame">
+    <div class="pad block-head reveal"><div class="eyebrow">What time bugs break</div><h2>It’s not a label that’s wrong. It’s what your product does.</h2><p>These bugs pass every test you run on your laptop. They show up for real users, in other time zones, on unusual days.</p></div>
+    <div class="breaks">
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg></div><h3>Payments skip a month</h3><p>A subscription started on 31 January renews on 3 March. February is never billed.</p></div>
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div><h3>Bookings land on the wrong day</h3><p>A user in Tokyo books a table for Tuesday. Your system saves Monday.</p></div>
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/></svg></div><h3>Trials end early</h3><p>A 14-day trial runs out after 13 days for users in some time zones.</p></div>
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg></div><h3>Reminders fire at 3 AM</h3><p>“Remind me at 9” fires at 9 AM in UTC, not 9 AM where the user is.</p></div>
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/></svg></div><h3>Jobs run twice, or not at all</h3><p>On the night clocks change, 2:30 AM happens twice in autumn and never in spring.</p></div>
+      <div class="brk reveal"><div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg></div><h3>Deadlines pass early</h3><p>A task due “today” already shows as overdue for users ahead of your server.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="block" id="features">
   <div class="frame">
-    <div class="pad block-head reveal"><div class="eyebrow">The problem</div><h2>Your website can show a different date to someone else.</h2><p>A date that looks right on your laptop can be a day off for a user in another time zone. You never see it. They do.</p></div>
+    <div class="pad block-head reveal"><div class="eyebrow">What tzproof does</div><h2>It uses your app like a real user, at the worst possible moment.</h2><p>You describe what a user does. tzproof does it at each risky time and place, checks every date the flow produces, and fixes what breaks.</p></div>
 
     <div class="feature">
-      <div class="pad reveal"><h3>Find dates that are a day off.</h3><p>At 8:30 AM in Tokyo it’s already Tuesday, but the page still says Monday. tzproof finds every date like that and shows what it should be.</p></div>
+      <div class="pad reveal"><h3>Run your real flows at the risky moments.</h3><p>“Start a trial.” “Book a slot for tomorrow.” “Set up monthly billing.” tzproof does it in a real browser at 8:30 AM in Tokyo, on 31 January, on the night clocks change, and checks every date that comes out.</p></div>
       <div class="fsky reveal"><div class="layer sky-dawn"></div><div class="grain"></div>
         <div class="float">
           <div class="fbar"><span>Grid › <b>Tokyo · 8:30 AM</b></span><span class="pill red"><i></i>FAIL</span></div>
@@ -432,6 +463,20 @@
   </div>
 </section>
 
+<section class="block" id="kane">
+  <div class="frame">
+    <div class="pad block-head reveal"><div class="eyebrow">Powered by Kane CLI</div><h2>Kane CLI does the browsing. tzproof sets the time.</h2><p>Kane CLI from TestMu AI drives a real Chrome from plain English. tzproof uses it at every step, from the run to the fix.</p></div>
+    <div class="kane">
+      <div class="kn reveal"><span class="tag">kane-cli run</span><h3>A real user, in plain English</h3><p>Kane opens your app and does the flow you describe. No selectors, no test code.</p></div>
+      <div class="kn reveal"><span class="tag">--cdp-endpoint</span><h3>A browser in another time</h3><p>tzproof starts Chrome in each time zone with its clock moved, and Kane drives that browser.</p></div>
+      <div class="kn reveal"><span class="tag">assertions</span><h3>Two checks on every date</h3><p>Kane checks each date itself, and tzproof checks the values Kane read. When they disagree, you see it.</p></div>
+      <div class="kn reveal"><span class="tag">evidence merge</span><h3>Proof you can open</h3><p>Every screenshot, step and log from every time zone, sealed into one Kane evidence pack.</p></div>
+      <div class="kn reveal"><span class="tag">evidence verdict</span><h3>A gate for every release</h3><p>A Kane policy fails the build if any time zone is wrong, so broken dates never ship.</p></div>
+      <div class="kn reveal"><span class="tag">Claude Code</span><h3>The fix, tested again</h3><p>Kane’s evidence goes to Claude Code. It fixes the code, and Kane runs every time zone again.</p></div>
+    </div>
+  </div>
+</section>
+
 <section class="band" id="proof">
   <div class="frame">
     <div class="pad block-head reveal"><div class="eyebrow">Results</div><h2>What it found on our demo page.</h2><p>From real test runs. The raw results are on GitHub.</p></div>
@@ -469,18 +514,18 @@
 
 <section class="final">
   <div class="layer sky-dusk" style="position:absolute;inset:0"></div><div class="grain"></div>
-  <h2 class="reveal">Find out what date your users really see.</h2>
-  <p class="reveal">Paste a link. Get the wrong dates, and the fix.</p>
+  <h2 class="reveal">Find the time bugs before your users do.</h2>
+  <p class="reveal">Paste a link. See what breaks in other time zones, and get the fix.</p>
   <a class="btn primary reveal" data-app href="/app">Test my website</a>
 </section>
 
 <div class="frame pad">
   <footer>
-    <div><a class="brand" href="#top" style="margin-bottom:10px"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="19" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="29" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z" fill="var(--logo-accent, #3fae7a)"/></svg>tzproof</a><span>MIT · built for the KaneCLI Online Hackathon</span></div>
+    <div><a class="brand" href="#top" style="margin-bottom:10px"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="19" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="29" cy="24" r="13" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M24 12A13 13 0 0 1 24 36A13 13 0 0 1 24 12Z" fill="var(--logo-accent, #3fae7a)"/></svg>tzproof</a><span>Free and open source (MIT)</span></div>
     <div class="cols">
       <div><h6>Product</h6><a data-app href="/app">Test my website</a><a href="#how">How it works</a><a href="#faq">FAQ</a></div>
       <div><h6>Code</h6><a href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/Milliebanned/tzproof/tree/main/examples/stop-hook" target="_blank" rel="noopener">Stop hook</a><a href="https://github.com/Milliebanned/tzproof#readme" target="_blank" rel="noopener">README</a></div>
-      <div><h6>Built with</h6><a href="https://github.com/LambdaTest/kane-cli" target="_blank" rel="noopener">Kane CLI</a><a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">The hackathon</a></div>
+      <div><h6>Built with</h6><a href="https://github.com/LambdaTest/kane-cli" target="_blank" rel="noopener">Kane CLI</a><a href="https://github.com/Milliebanned/tzproof/tree/main/examples" target="_blank" rel="noopener">Examples</a></div>
     </div>
   </footer>
 </div>
