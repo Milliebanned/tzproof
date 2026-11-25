@@ -6,16 +6,14 @@ const RULES = [
   ['today+7d', 'today + 7 days'], ['today+14d', 'today + 14 days'], ['today+30d', 'today + 30 days'],
   ['today+1mo', 'today + 1 month'], ['today+1y', 'today + 1 year'],
 ];
-const TEMPLATES = [
-  { label: 'Today’s date on the page', objective: "Go to {{app}}. Store the date the page shows as today's date as 'today'.", expect: [['today', 'today']] },
-  { label: 'Delivery estimate', objective: "Go to {{app}}. Store the estimated delivery date shown on the page as 'delivery'.", expect: [['delivery', 'today+3d']] },
-  { label: 'Trial or renewal date', objective: "Go to {{app}}. Store the date the trial ends or the plan renews as 'renews'.", expect: [['renews', 'today+14d']] },
-  { label: 'Due date', objective: "Go to {{app}}. Store the due date shown on the page as 'due'.", expect: [['due', 'today+30d']] },
+const SUGGEST = [
+  ['the delivery date at checkout', 'today+3d'], ['when my free trial ends', 'today+14d'], ['the date on today’s invoice', 'today'],
+  ['the next billing date', 'today+1mo'], ['the due date on a new task', 'today+7d'],
 ];
 const DEFAULT_CLOCKS = ['new-york-afternoon', 'tokyo-morning', 'los-angeles-evening', 'london-bst-midnight', 'month-end'];
 
 const state = {
-  setup: null, demo: false, url: '', selected: new Set(DEFAULT_CLOCKS), expects: [['today', 'today']],
+  setup: null, demo: false, selected: new Set(DEFAULT_CLOCKS), panelOpen: false,
   runId: null, grids: new Map(), activeGrid: null, source: null,
 };
 
@@ -32,64 +30,35 @@ function toast(msg) {
 function showError(sel, msg) { const el = $(sel); el.textContent = msg || ''; el.hidden = !msg; }
 function clocks() { return state.setup.presets.filter(p => state.selected.has(p.id)); }
 
-/* ---------- hero: real clocks, right now ---------- */
-function tickHero() {
-  const now = new Date();
-  const zones = [['Tokyo', 'Asia/Tokyo'], ['London', 'Europe/London'], ['New York', 'America/New_York'], ['Los Angeles', 'America/Los_Angeles'], ['UTC', 'UTC']];
-  const utcDay = now.toISOString().slice(0, 10);
-  $('#clockline').innerHTML = zones.map(([city, tz]) => {
-    const day = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
-    const t = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(now);
-    return `<span class="tick ${day !== utcDay ? 'bad' : ''}" title="${day !== utcDay ? 'A different calendar day than UTC right now' : ''}"><b>${city}</b>${t}</span>`;
-  }).join('');
+/* ---------- composer ---------- */
+function renderRules(value = 'today+3d') {
+  $('#rule').innerHTML = RULES.map(([v, l]) => `<option value="${v}" ${v === value ? 'selected' : ''}>${l}</option>`).join('');
 }
-
-/* ---------- builder ---------- */
-function renderTemplates() {
-  $('#templates').innerHTML = TEMPLATES.map((t, i) => `<button class="tpl" type="button" data-i="${i}">${esc(t.label)}</button>`).join('');
+function renderChips() {
+  const chosen = clocks();
+  $('#clock-chips').innerHTML = chosen.map(c => `<span class="cchip"><i></i>${esc(c.name)} · ${esc(c.when)}</span>`).join('')
+    + `<button class="cchip add" type="button" id="toggle-clocks">${state.panelOpen ? 'Done' : chosen.length ? 'Change' : '+ Pick clocks'}</button>`;
+  const n = chosen.length;
+  $('#estimate').innerHTML = n ? `${n} real Chrome run${n === 1 ? '' : 's'}<br>~${n * 20} Kane credits` : 'Pick a clock';
 }
-$('#templates').addEventListener('click', (e) => {
-  const b = e.target.closest('.tpl');
-  if (!b) return;
-  const t = TEMPLATES[b.dataset.i];
-  $('#objective').value = t.objective;
-  state.expects = t.expect.map(x => [...x]);
-  renderExpects();
-});
-
-function renderExpects() {
-  $('#expects').innerHTML = state.expects.map(([key, rule], i) => `
-    <div class="expect" data-i="${i}">
-      <input class="x-key" value="${esc(key)}" placeholder="stored as" aria-label="Name Kane stores the date under">
-      <select class="x-rule" aria-label="What the date should be">${RULES.map(([v, l]) => `<option value="${v}" ${v === rule ? 'selected' : ''}>should be ${l}</option>`).join('')}</select>
-      <button class="btn quiet small x-del" type="button" aria-label="Remove">✕</button>
-    </div>`).join('');
-}
-$('#expects').addEventListener('input', (e) => {
-  const i = e.target.closest('.expect')?.dataset.i;
-  if (i === undefined) return;
-  if (e.target.classList.contains('x-key')) state.expects[i][0] = e.target.value.trim().replace(/\W+/g, '_');
-  if (e.target.classList.contains('x-rule')) state.expects[i][1] = e.target.value;
-});
-$('#expects').addEventListener('click', (e) => {
-  if (!e.target.classList.contains('x-del')) return;
-  state.expects.splice(e.target.closest('.expect').dataset.i, 1);
-  renderExpects();
-});
-$('#add-expect').addEventListener('click', () => { state.expects.push(['', 'today']); renderExpects(); });
-
 function renderClocks() {
   const max = state.setup.limits.maxCells;
+  $('#clock-max').textContent = `up to ${max}`;
   $('#clocks').innerHTML = state.setup.presets.map((p) => {
     const on = state.selected.has(p.id);
     return `<button class="clock" type="button" aria-pressed="${on}" data-id="${esc(p.id)}" ${!on && state.selected.size >= max ? 'disabled' : ''}>
-      <div class="city">${esc(p.name)} <span class="when">${esc(p.when)}</span></div>
+      <div class="city">${esc(p.name)} <span class="when">· ${esc(p.when)}</span></div>
       <div class="when">${esc(whenText(p))}</div>
       <div class="why">${esc(p.why)}</div></button>`;
   }).join('');
-  const n = state.selected.size;
-  $('#estimate').textContent = n ? `${n} Kane run${n === 1 ? '' : 's'} in a real Chrome · about ${n * 20} Kane credits · ~${Math.ceil(n / 2) + 1} min` : 'Pick at least one place and time.';
+  renderChips();
 }
+$('#clock-chips').addEventListener('click', (e) => {
+  if (e.target.id !== 'toggle-clocks') return;
+  state.panelOpen = !state.panelOpen;
+  $('#clock-panel').hidden = !state.panelOpen;
+  renderChips();
+});
 $('#clocks').addEventListener('click', (e) => {
   const b = e.target.closest('.clock');
   if (!b || b.disabled) return;
@@ -97,48 +66,42 @@ $('#clocks').addEventListener('click', (e) => {
   else state.selected.add(b.dataset.id);
   renderClocks();
 });
-
-function openBuilder(url) {
-  state.demo = false;
-  state.url = url;
-  $('#results').hidden = true;
-  $('#builder').hidden = false;
-  $('#builder-title').textContent = 'Test your site';
-  $('#builder-url').textContent = url || (state.setup.config?.serve ? `Serving ${state.setup.config.serve} from your tzproof.yaml` : '');
-  if (!$('#objective').value) $('#objective').value = TEMPLATES[0].objective;
-  renderExpects();
-  renderClocks();
-  $('#builder').scrollIntoView({ behavior: 'smooth', block: 'start' });
+for (const id of ['url', 'what']) {
+  $(`#${id}`).addEventListener('input', e => e.target.classList.toggle('filled', !!e.target.value.trim()));
 }
-
-$('#url-form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  if (!state.setup) return;
-  let url = $('#url').value.trim();
-  if (!url && state.setup.publicMode) { $('#url').focus(); return; }
-  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
-  openBuilder(url);
+function renderSuggest() {
+  $('#suggest').innerHTML = SUGGEST.map(([t], i) => `<button type="button" data-i="${i}">${esc(t)}</button>`).join('');
+}
+$('#suggest').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const [what, rule] = SUGGEST[b.dataset.i];
+  $('#what').value = what;
+  $('#what').classList.add('filled');
+  renderRules(rule);
+  if (!$('#url').value.trim()) $('#url').focus();
 });
-$('#change-url').addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); $('#url').focus(); });
 $('#try-demo').addEventListener('click', () => state.setup && startRun({ demo: true, clocks: state.setup.presets.filter(p => DEFAULT_CLOCKS.includes(p.id)) }));
 
-$('#run').addEventListener('click', () => {
+$('#composer').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!state.setup) return undefined;
   showError('#builder-error', '');
-  const expect = Object.fromEntries(state.expects.filter(([k]) => k).map(([k, r]) => [k, r]));
-  const objective = $('#objective').value.trim();
-  if (!objective) return showError('#builder-error', 'Tell Kane what to look at.');
-  if (!Object.keys(expect).length) return showError('#builder-error', 'Add at least one date to check.');
-  const missing = Object.keys(expect).filter(k => !objective.includes(k));
-  if (missing.length) return showError('#builder-error', `Your instruction should tell Kane to store ${missing.map(k => `'${k}'`).join(' and ')}.`);
+  let url = $('#url').value.trim();
+  const what = $('#what').value.trim();
+  if (!url && !(state.setup.config?.serve && !state.setup.publicMode)) { $('#url').focus(); return showError('#builder-error', 'Which page should Kane open?'); }
+  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+  if (!what) { $('#what').focus(); return showError('#builder-error', 'Which date should Kane check? For example: the delivery date at checkout.'); }
   if (!clocks().length) return showError('#builder-error', 'Pick at least one place and time.');
-  return startRun({ app: state.url || undefined, clocks: clocks(), dateOrder: $('#date-order').value, flows: [{ id: 'dates', name: 'Dates', objective, expect }] });
+  const objective = `Go to {{app}}. Find ${what} on the page and store that date as 'date'.`;
+  return startRun({ app: url || undefined, clocks: clocks(), flows: [{ id: 'date', name: what, objective, expect: { date: $('#rule').value } }] });
 });
 
 /* ---------- running ---------- */
 async function startRun(body) {
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify(body) }).then(r => r.json()).catch(() => ({ error: 'The server did not answer.' }));
   if (res.error) {
-    if (body.demo) toast(res.error);
+    toast(res.error);
     return showError('#builder-error', res.error);
   }
   state.runId = res.id;
@@ -151,7 +114,6 @@ async function startRun(body) {
 }
 
 function prepareResults(title) {
-  $('#builder').hidden = true;
   $('#results').hidden = false;
   $('#results-title').textContent = 'Kane is testing';
   $('#results-sub').textContent = title;
@@ -420,22 +382,18 @@ async function refreshCredits() {
 }
 
 async function boot() {
-  tickHero();
-  setInterval(tickHero, 15000);
   state.setup = await fetch('/api/setup').then(r => r.json());
-  renderTemplates();
+  const q = new URLSearchParams(location.search);
+  renderRules(q.get('rule') || 'today+3d');
+  if (q.get('what')) { $('#what').value = q.get('what'); $('#what').classList.add('filled'); }
+  if (q.get('url')) { $('#url').value = q.get('url'); $('#url').classList.add('filled'); }
+  if (!state.setup.publicMode && state.setup.config?.serve) $('#url').placeholder = `${state.setup.config.serve} (from tzproof.yaml)`;
+  renderSuggest();
+  renderClocks();
   refreshCredits();
-  if (!state.setup.publicMode && state.setup.config) {
-    const cfg = state.setup.config;
-    const f = cfg.flows[0];
-    $('#objective').value = f.objective.trim();
-    state.expects = Object.entries(f.expect || {}).map(([k, v]) => [k, typeof v === 'string' ? v : v.date]);
-    const ids = new Set(state.setup.presets.map(p => p.id));
-    state.selected = new Set(cfg.clocks.map(c => c.id).filter(x => ids.has(x)));
-    if (cfg.app) $('#url').value = cfg.app;
-  }
   const shared = location.pathname.match(/^\/r\/([\w-]+)/);
   if (shared) openSaved(shared[1]);
+  else if (q.get('what') && !q.get('url')) $('#url').focus();
 }
 window.addEventListener('popstate', () => location.reload());
 boot();

@@ -4,135 +4,117 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tzproof</title>
-<meta name="description" content="Paste your website. Kane CLI opens it in a real Chrome in Tokyo at 8:30 AM, London after midnight in summer, on 31 January, and checks every date.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f6b47'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23f7f2ea' stroke-width='2.4'/%3E%3Cpath d='M16 10.5V16l3.6 2.4' stroke='%23f7f2ea' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<meta name="description" content="Paste your website. Kane CLI opens it in a real Chrome at many clocks and time zones, and tzproof checks every date.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231f1a15'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23f7f2ea' stroke-width='2.4'/%3E%3Cpath d='M16 10.5V16l3.6 2.4' stroke='%237fd1a6' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header class="hero">
-  <nav class="nav wrap">
-    <a class="brand" href="/"><span class="mark"></span>tzproof</a>
-    <div class="nav-right">
-      <span id="credits" class="chip"></span>
-      <a href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </nav>
 
-  <div class="wrap hero-body" id="hero">
-    <div class="clockline" id="clockline" aria-hidden="true"></div>
-    <h1>Test your site at every clock.</h1>
-    <p class="lede">Paste a page with dates on it. Kane CLI opens it in a real Chrome in Tokyo, in London after midnight in summer, on 31 January, and tzproof checks every date.</p>
-
-    <form id="url-form" class="urlbar" autocomplete="off">
-      <input id="url" type="url" inputmode="url" placeholder="https://your-site.com/checkout" aria-label="Your website address">
-      <button class="btn hot" type="submit">Set up a test →</button>
-    </form>
-    <div class="hero-alt">
-      <button id="try-demo" class="btn ghost-light" type="button">▶ Try it on our demo app</button>
-      <span>Kane finds 4 wrong dates, then Claude fixes them live.</span>
-    </div>
+<div class="nav-wrap">
+  <div class="frame pad">
+    <nav>
+      <a class="brand" href="/" aria-label="tzproof home">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><circle cx="16" cy="16" r="9" fill="none" stroke="var(--cream)" stroke-width="2.4"/><path d="M16 10.5V16l3.6 2.4" stroke="var(--mint)" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+        tzproof
+      </a>
+      <div class="nav-right"><span id="credits" class="chip"></span><a href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a></div>
+    </nav>
   </div>
-</header>
+</div>
 
-<main class="wrap">
-  <!-- Builder -->
-  <section id="builder" class="panel" hidden>
-    <div class="panel-head">
-      <div>
-        <div class="eyebrow">Test</div>
-        <h2 id="builder-title">Your site</h2>
-        <div id="builder-url" class="mono muted"></div>
-      </div>
-      <button class="btn quiet" id="change-url" type="button">Change</button>
-    </div>
+<main>
+  <section class="compose-sec">
+    <div class="frame pad">
+      <div class="eyebrow">New test</div>
+      <h1>What should Kane check?</h1>
+      <p class="lede">Say where the date is, in plain English. Kane opens your page in a real Chrome at every clock you pick, and tzproof checks the date it finds.</p>
 
-    <div class="builder-grid">
-      <div>
-        <h3><span class="n">1</span> What should Kane look at?</h3>
-        <p class="hint">Tell Kane where the dates are, in plain English. It stores each one under a name.</p>
-        <div class="templates" id="templates"></div>
-        <textarea id="objective" rows="4"></textarea>
-        <h3 class="mt"><span class="n">2</span> What should each date be?</h3>
-        <p class="hint">For a user at that place and time. tzproof checks the calendar day, whatever format your page uses.</p>
-        <div id="expects"></div>
-        <button class="btn quiet small" id="add-expect" type="button">+ Another date</button>
-        <label class="order">Your site writes dates as
-          <select id="date-order"><option value="mdy">month/day (6/15/2026)</option><option value="dmy">day/month (15/6/2026)</option></select>
-        </label>
-      </div>
-      <div>
-        <h3><span class="n">3</span> Where and when is the user?</h3>
-        <p class="hint" id="clock-hint">Pick up to 6. Kane opens your site in a Chrome that believes it is there, then.</p>
-        <div class="clocks" id="clocks"></div>
-      </div>
-    </div>
+      <form class="composer" id="composer" autocomplete="off">
+        <div class="sentence">
+          <span class="w">Kane, open</span>
+          <input id="url" class="slot url" type="text" inputmode="url" placeholder="your-site.com/checkout" aria-label="Your page address">
+          <span class="w">and check</span>
+          <input id="what" class="slot what" type="text" placeholder="the delivery date" aria-label="Which date to check">
+          <span class="w">. It should be</span>
+          <span class="slot select-slot"><select id="rule" aria-label="What the date should be"></select></span>
+          <span class="w">for the user.</span>
+        </div>
+        <div class="composer-foot">
+          <div class="clock-chips" id="clock-chips"></div>
+          <div class="send-row">
+            <span class="estimate" id="estimate"></span>
+            <button class="send" id="run" type="submit" aria-label="Run with Kane"><span>Run</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 15V5M5.5 9.5 10 5l4.5 4.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+        <div class="clock-panel" id="clock-panel" hidden>
+          <div class="clock-panel-head"><span>Where and when is the user?</span><span class="muted" id="clock-max"></span></div>
+          <div class="clocks" id="clocks"></div>
+        </div>
+      </form>
+      <p id="builder-error" class="error" hidden></p>
 
-    <div class="runbar">
-      <div id="estimate" class="muted"></div>
-      <button class="btn hot big" id="run" type="button">Run with Kane</button>
+      <div class="suggest" id="suggest"></div>
+      <div class="demo-line">
+        <span class="muted">No page to test yet?</span>
+        <button class="link-btn" id="try-demo" type="button">Watch Kane test our demo billing page, then Claude fix it live <span aria-hidden="true">→</span></button>
+      </div>
     </div>
-    <p id="builder-error" class="error" hidden></p>
   </section>
 
-  <!-- Results -->
-  <section id="results" class="panel" hidden>
-    <div class="panel-head">
-      <div>
-        <div class="eyebrow" id="results-eyebrow">Results</div>
-        <h2 id="results-title">Kane is testing</h2>
-        <div id="results-sub" class="muted"></div>
+  <section id="results" class="results-sec" hidden>
+    <div class="frame pad">
+      <div class="results-head">
+        <div>
+          <div class="eyebrow" id="results-eyebrow">Results</div>
+          <h2 id="results-title">Kane is testing</h2>
+          <div id="results-sub" class="muted mono-sm"></div>
+        </div>
+        <div class="actions">
+          <button class="ghost" id="share" type="button" hidden>Copy share link</button>
+          <a class="ghost" id="report" target="_blank" hidden>Report</a>
+          <button class="ghost" id="evidence" type="button" hidden>Kane evidence viewer</button>
+        </div>
       </div>
-      <div class="actions">
-        <button class="btn quiet" id="share" type="button" hidden>Copy share link</button>
-        <a class="btn quiet" id="report" target="_blank" hidden>Report</a>
-        <button class="btn quiet" id="evidence" type="button" hidden>Kane evidence viewer</button>
-      </div>
-    </div>
-    <div id="status" class="status"></div>
-    <div id="grids"></div>
-    <div id="policy" class="policy" hidden></div>
+      <div id="status" class="status"></div>
+      <div id="grids"></div>
+      <div id="policy" class="policy" hidden></div>
 
-    <div id="fix-demo" class="fixbox" hidden>
-      <div>
-        <h3>Fix it with Claude</h3>
-        <p class="hint">Claude Code gets every red cell with Kane's evidence. It may edit only the demo app's code, with no shell. Then every clock runs again.</p>
+      <div id="fix-demo" class="fixbox" hidden>
+        <div>
+          <h3>Let Claude fix it</h3>
+          <p>Claude Code gets every red cell with Kane's evidence. It may edit only the demo app's code, with no shell. Then every clock runs again.</p>
+        </div>
+        <button class="cta" id="fix" type="button"><span>Fix with Claude</span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M10.5 5.5 15 10l-4.5 4.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
-      <button class="btn hot" id="fix" type="button">Fix with Claude</button>
+      <div id="fix-own" class="fixbox" hidden>
+        <div>
+          <h3>Fix it in your repo</h3>
+          <p>Paste this into Claude Code in your project. It carries Kane's evidence for every red cell. Then add the tzproof Stop hook so the agent can't say "done" while a clock is red.</p>
+        </div>
+        <div class="fix-own-actions">
+          <button class="cta" id="copy-prompt" type="button"><span>Copy the fix prompt</span></button>
+          <a class="ghost" href="https://github.com/Milliebanned/tzproof/tree/main/examples/stop-hook" target="_blank" rel="noopener">Stop hook setup</a>
+        </div>
+      </div>
+      <p id="fix-error" class="error" hidden></p>
     </div>
-    <div id="fix-own" class="fixbox" hidden>
-      <div>
-        <h3>Fix it in your repo</h3>
-        <p class="hint">Paste this into Claude Code (or any coding agent) in your project. It has Kane's evidence for every red cell. Then add the tzproof Stop hook so the agent can't say "done" while a clock is red.</p>
-      </div>
-      <div class="fix-own-actions">
-        <button class="btn hot" id="copy-prompt" type="button">Copy the fix prompt</button>
-        <a class="btn quiet" href="https://github.com/Milliebanned/tzproof/tree/main/examples/stop-hook" target="_blank" rel="noopener">Stop hook setup</a>
-      </div>
-    </div>
-    <p id="fix-error" class="error" hidden></p>
-    <div id="timeline"></div>
-  </section>
-
-  <!-- How it works -->
-  <section class="how" id="how">
-    <div class="how-item"><div class="big">1</div><h3>Kane reads the page</h3><p>For each place and time, tzproof starts Chrome in that time zone with its clock moved. Kane CLI uses your site like a person and stores the dates it sees.</p></div>
-    <div class="how-item"><div class="big">2</div><h3>Code judges the date</h3><p>tzproof works out the right calendar day for that user. Kane checks too, but in our runs its own check passed a wrong date in 1 of 5 cells, so the code decides.</p></div>
-    <div class="how-item"><div class="big">3</div><h3>Claude fixes it</h3><p>Red cells and Kane's evidence go to Claude Code. It edits only your app, and every clock runs again until all are green.</p></div>
   </section>
 </main>
 
-<footer class="wrap foot">
-  <span>tzproof · MIT · built for the <a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">KaneCLI Online Hackathon</a></span>
-  <span>Browser runs by <a href="https://github.com/LambdaTest/kane-cli" target="_blank" rel="noopener">Kane CLI</a> from TestMu AI</span>
-</footer>
+<div class="frame pad">
+  <footer class="foot">
+    <span>tzproof · MIT · built for the <a href="https://www.kaneclihack.sh" target="_blank" rel="noopener">KaneCLI Online Hackathon</a></span>
+    <span>Browser runs by <a href="https://github.com/LambdaTest/kane-cli" target="_blank" rel="noopener">Kane CLI</a> from TestMu AI</span>
+  </footer>
+</div>
 
 <aside id="drawer" class="drawer" hidden>
   <div class="drawer-head">
-    <div><div id="d-title" class="d-title"></div><div id="d-sub" class="muted"></div></div>
-    <button id="d-close" class="btn quiet small" type="button" aria-label="Close">✕</button>
+    <div><div id="d-title" class="d-title"></div><div id="d-sub" class="muted mono-sm"></div></div>
+    <button id="d-close" class="ghost small" type="button" aria-label="Close">✕</button>
   </div>
   <div id="d-body"></div>
 </aside>
