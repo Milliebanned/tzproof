@@ -233,14 +233,14 @@ function onEvent({ type, data }, ctx) {
     const card = document.createElement('div');
     card.className = 'attempt';
     card.id = `attempt-${ctx.jobId}-${data.attempt}`;
-    card.innerHTML = `<h3>Fix ${data.attempt} · Claude Code</h3><div class="agent-text"><span class="spinner"></span>Reading Kane's evidence for ${data.failing} red cell${data.failing === 1 ? '' : 's'} and editing the app…</div>`;
+    card.innerHTML = `<h3>Fix ${data.attempt} · ${esc(data.agent || 'Claude Code')}</h3><div class="agent-text"><span class="spinner"></span>Reading the evidence for ${data.failing} wrong time zone${data.failing === 1 ? '' : 's'} and fixing the code…</div>`;
     $('#grids').appendChild(card);
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   if (type === 'agent-done') renderAgent(ctx.jobId, data);
   if (type === 'end') {
     $('#fix').disabled = false;
-    $('#fix').textContent = 'Fix with Claude';
+    $('#fix').textContent = `Fix with ${state.setup.fixAgentName || 'Claude'}`;
     if (!data.ok) { statusEl.textContent = ''; showError('#fix-error', data.error); }
     if (ctx.kind === 'fix') {
       const done = document.createElement('div');
@@ -258,7 +258,7 @@ function renderAgent(jobId, data) {
   if (!card) {
     card = document.createElement('div');
     card.className = 'attempt';
-    card.innerHTML = `<h3>Fix ${data.attempt} · Claude Code</h3><div class="agent-text"></div>`;
+    card.innerHTML = `<h3>Fix ${data.attempt} · ${esc(data.agent || 'Claude Code')}</h3><div class="agent-text"></div>`;
     $('#grids').appendChild(card);
   }
   card.querySelector('.agent-text').textContent = data.text || '(no message)';
@@ -279,7 +279,7 @@ $('#fix').addEventListener('click', async () => {
   const res = await fetch('/api/fix', { method: 'POST', body: JSON.stringify({ runId: state.runId }) }).then(r => r.json());
   if (res.error) return showError('#fix-error', res.error);
   $('#fix').disabled = true;
-  $('#fix').innerHTML = '<span class="spinner"></span>Claude is fixing…';
+  $('#fix').innerHTML = `<span class="spinner"></span>${esc(state.setup.fixAgentName || 'Claude')} is fixing…`;
   $('#fix-demo').hidden = true;
   history.pushState(null, '', `/r/${res.id}`);
   const first = [...state.grids.get('run').cells.values()];
@@ -388,6 +388,10 @@ async function boot() {
   if (q.get('what')) { $('#what').value = q.get('what'); $('#what').classList.add('filled'); }
   if (q.get('url')) { $('#url').value = q.get('url'); $('#url').classList.add('filled'); }
   if (!state.setup.publicMode && state.setup.config?.serve) $('#url').placeholder = `${state.setup.config.serve} (from tzproof.yaml)`;
+  const who = state.setup.fixAgentName || 'Claude';
+  $('#fix').querySelector('span').textContent = `Fix with ${who}`;
+  $('#fix-demo h3').textContent = `Let ${who} fix it`;
+  $('#fix-demo p').textContent = `${who} gets every wrong time zone with Kane's evidence. It may change only the demo app's code. Then every time zone is tested again.`;
   renderSuggest();
   renderClocks();
   refreshCredits();

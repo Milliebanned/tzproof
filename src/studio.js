@@ -108,7 +108,10 @@ export async function startStudio({ configPath, port = 4321, host = '127.0.0.1',
     dailyCredits: Number(process.env.TZPROOF_DAILY_CREDITS || (publicMode ? 1500 : 1e9)),
     dailyFixes: Number(process.env.TZPROOF_DAILY_FIXES || (publicMode ? 15 : 1e9)),
   };
-  const liveFix = !publicMode || !!process.env.ANTHROPIC_API_KEY;
+  // Who fixes: Claude Code if an Anthropic key is set (or always, locally), otherwise Gemini if a Gemini key is set.
+  const fixAgent = !publicMode || process.env.ANTHROPIC_API_KEY ? 'claude' : process.env.GEMINI_API_KEY ? 'gemini' : null;
+  const fixAgentName = fixAgent === 'gemini' ? 'Gemini' : 'Claude';
+  const liveFix = !!fixAgent;
   const internalBase = `http://127.0.0.1:${port}`;
 
   const jobs = new Map();
@@ -216,7 +219,7 @@ export async function startStudio({ configPath, port = 4321, host = '127.0.0.1',
     if (demo) {
       cpSync(DEMO_APP, join(job.dir, 'app'), { recursive: true });
       config.app = `${internalBase}/demo/${job.id}/`;
-      config.fix = { edit: join(job.dir, 'app'), maxAttempts: 2 };
+      config.fix = { edit: join(job.dir, 'app'), maxAttempts: 2, ...(fixAgent === 'gemini' ? { agent: 'gemini' } : {}) };
       config.flows = [DEMO_FLOW];
       job.publicApp = 'tzproof demo billing page';
     }
@@ -335,7 +338,7 @@ export async function startStudio({ configPath, port = 4321, host = '127.0.0.1',
     try {
       if (req.method === 'GET' && url.pathname === '/api/setup') {
         return send(res, 200, {
-          publicMode, liveFix, limits,
+          publicMode, liveFix, fixAgentName, limits,
           presets: CLOCK_PRESETS,
           demoFlow: DEMO_FLOW,
           config: !publicMode && base ? {

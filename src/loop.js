@@ -4,6 +4,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
+import { runGeminiFixer } from './gemini.js';
 import { renderReport } from './report.js';
 import { planCells, runGrid } from './runner.js';
 
@@ -99,7 +100,7 @@ const DEFAULT_AGENT = ['claude', '-p', '--output-format', 'json', '--permission-
 export async function runLoop(config, { outDir, parallel, headless = true, maxAttempts = 3, log = console.log, emit = () => {}, startFrom = null }) {
   if (!config.fix?.edit) throw new Error('Add a "fix" section to the config: fix: { edit: ./path/the/agent/may/change }');
   const editDir = resolve(config.base, config.fix.edit);
-  const agentCmd = config.fix.agent ? String(config.fix.agent).split(' ') : DEFAULT_AGENT;
+  const agentCmd = config.fix.agent && config.fix.agent !== 'gemini' ? String(config.fix.agent).split(' ') : DEFAULT_AGENT;
   const protectedRoot = config.base;
   const protectedNote = 'Do not edit tzproof.yaml, tests, or anything outside that folder: those files are checked, and an attempt that changes them is rejected and undone.';
   mkdirSync(outDir, { recursive: true });
@@ -132,8 +133,8 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
 
     const prompt = buildPrompt(current.results, editDir, protectedNote);
     writeFileSync(join(outDir, `attempt-${n}-prompt.md`), prompt);
-    emit('agent-start', { attempt: n, failing: current.results.summary.fail });
-    const agent = await runAgent(prompt, editDir, agentCmd);
+    emit('agent-start', { attempt: n, failing: current.results.summary.fail, agent: config.fix.agent === 'gemini' ? 'Gemini' : 'Claude Code' });
+    const agent = config.fix.agent === 'gemini' ? await runGeminiFixer(prompt, editDir) : await runAgent(prompt, editDir, agentCmd);
     log(`agent: ${agent.text.replace(/\s+/g, ' ').slice(0, 300)}`);
 
     // Guard: anything outside the app folder that changed is restored and the attempt is rejected.
@@ -145,7 +146,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
       .replaceAll(`a${before}`, 'a').replaceAll(`b${editDir}`, 'b').replaceAll(before, '').replaceAll(editDir, '');
     writeFileSync(join(outDir, `attempt-${n}.diff`), diff);
 
-    emit('agent-done', { attempt: n, text: agent.text, cost: agent.cost, diff, rejected: tampered.length > 0, tampered });
+    emit('agent-done', { attempt: n, agent: config.fix.agent === 'gemini' ? 'Gemini' : 'Claude Code', text: agent.text, cost: agent.cost, diff, rejected: tampered.length > 0, tampered });
     if (tampered.length) {
       log(`✗ rejected: the agent changed protected files: ${tampered.join(', ')}`);
       // Put each file back exactly as it was before this attempt (never from git: that would also drop
