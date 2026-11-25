@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Coffee · Your subscription</title>
+<style>
+  body { margin: 0; font: 16px/1.55 system-ui, -apple-system, sans-serif; background: #faf7f2; color: #2a211b; }
+  header { padding: 18px 28px; border-bottom: 1px solid #eadfce; font-weight: 700; letter-spacing: .02em; }
+  main { max-width: 560px; margin: 40px auto; padding: 0 20px; }
+  .card { background: #fff; border: 1px solid #eadfce; border-radius: 14px; padding: 24px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .muted { color: #8a7b6c; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 10px 24px; margin: 22px 0 0; }
+  dt { color: #8a7b6c; } dd { margin: 0; font-weight: 600; }
+  .note { margin-top: 18px; font-size: 13px; color: #8a7b6c; }
+</style>
+</head>
+<body>
+<header>☕ Lumen Coffee</header>
+<main>
+  <div class="card">
+    <h1>Your subscription</h1>
+    <div class="muted">House blend · 1 bag every week</div>
+    <dl>
+      <dt>Order placed</dt><dd id="placed"></dd>
+      <dt>Next delivery</dt><dd id="next"></dd>
+      <dt>Plan renews</dt><dd id="renews"></dd>
+    </dl>
+    <p class="note">A sample store page for trying tzproof. It has a common date bug on purpose.</p>
+  </div>
+</main>
+<script>
+  const now = new Date();
+  const nice = d => d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  // The bug: the shop works out "today" in UTC, not where the customer is.
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const add = (d, n) => new Date(d.getTime() + n * 86400000);
+  document.getElementById('placed').textContent = nice(todayUTC);
+  document.getElementById('next').textContent = nice(add(todayUTC, 7));
+  const r = new Date(todayUTC); r.setUTCMonth(r.getUTCMonth() + 1);
+  document.getElementById('renews').textContent = nice(r);
+</script>
+</body>
+</html>
