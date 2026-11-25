@@ -128,9 +128,16 @@ export async function launchWarpedChrome({ tz, at, headless = true, width = 1920
     endpoint: `http://127.0.0.1:${port}`,
     async close() {
       try { ws.close(); } catch { /* already closed */ }
+      // Wait for Chrome to really exit before deleting its profile; it keeps writing files while it shuts down.
+      const exited = new Promise(r => (chrome.exitCode !== null ? r() : chrome.once('exit', r)));
       chrome.kill();
-      await sleep(300);
-      rmSync(profile, { recursive: true, force: true });
+      await Promise.race([exited, sleep(5000)]);
+      if (chrome.exitCode === null) chrome.kill('SIGKILL');
+      // Cleanup must never fail a run.
+      for (let i = 0; i < 5; i++) {
+        try { rmSync(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }); break; }
+        catch { await sleep(400); }
+      }
     },
   };
 }
