@@ -2,6 +2,8 @@
 
 **Is your app right in every time zone, on every date?**
 
+**Website:** https://milliebanned.github.io/tzproof/ (try the bug in your browser) · **Studio:** `node bin/tzproof.js ui`
+
 tzproof opens your app in a real Chrome that believes it is somewhere else, at some other moment (Tokyo at 8:30 AM, London just after midnight in summer time, 31 January, a leap day). [Kane CLI](https://github.com/LambdaTest/kane-cli) uses the app like a person and reads the dates it shows. tzproof works out what each date *should* be for that user and compares. When a date is wrong, your coding agent gets Kane's evidence and fixes the code, and the whole grid runs again until every cell is green.
 
 ![tzproof grid: 1 pass, 4 fail](docs/grid.png)
