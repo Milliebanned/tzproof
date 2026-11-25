@@ -165,6 +165,14 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
     }
     rmSync(before, { recursive: true, force: true });
 
+    // Nothing changed (the fixer failed or gave up): re-running every clock would only spend credits.
+    if (!diff.trim()) {
+      log(`attempt ${n} changed nothing: not re-running the grid`);
+      attempts.push({ attempt: n, agent: agent.text, agentCost: agent.cost, diff: `attempt-${n}.diff`, prompt: `attempt-${n}-prompt.md`, unchanged: true });
+      emit('grid-skip', { attempt: n });
+      break;
+    }
+
     log(`\n=== re-running the whole grid after attempt ${n} ===`);
     current = await grid(`${n}-after-fix`);
     attempts.push({
@@ -190,7 +198,8 @@ function renderLoopMarkdown(loop) {
     lines.push(`## Attempt ${a.attempt}`);
     if (a.agent) lines.push('', '**Agent:**', '', '> ' + a.agent.trim().replace(/\n/g, '\n> '));
     lines.push('', `[prompt](${a.prompt || '#'}) · [diff](${a.diff})`);
-    if (a.rejected) lines.push('', `**Rejected:** changed protected files (${a.tampered.join(', ')}). Changes undone.`);
+    if (a.unchanged) lines.push('', 'No change was made, so the grid was not re-run.');
+    else if (a.rejected) lines.push('', `**Rejected:** changed protected files (${a.tampered.join(', ')}). Changes undone.`);
     else lines.push('', `Re-run: ${a.summary.pass} pass · ${a.summary.fail} fail · ${a.summary.unknown} unknown — [report](${a.run}/report.html)`);
     lines.push('');
   }

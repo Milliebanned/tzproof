@@ -27,19 +27,21 @@ function sourceFiles(dir) {
   return out;
 }
 
-let cachedModel = null;
-async function pickModel(key) {
-  if (process.env.TZPROOF_GEMINI_MODEL) return process.env.TZPROOF_GEMINI_MODEL;
-  if (cachedModel) return cachedModel;
-  const res = await fetch(`${API}/models?key=${encodeURIComponent(key)}&pageSize=200`);
-  if (!res.ok) throw new Error(`Gemini: could not list models (${res.status})`);
-  const { models = [] } = await res.json();
-  const usable = models.filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, ''));
-  // Prefer a current "flash" model: fast and on the free tier.
-  const flash = usable.filter(n => /flash/.test(n) && !/lite|image|tts|audio|live|thinking-exp/.test(n));
-  cachedModel = flash.sort().reverse()[0] || usable[0];
-  if (!cachedModel) throw new Error('Gemini: no model available for this key');
-  return cachedModel;
+// Free-tier friendly models first. Names change over time, so on "busy", "no quota" or "not available" the next
+// one is tried.
+const PREFERRED = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-3.5-flash-lite', 'gemini-flash-lite-latest'];
+
+async function generate(key, model, request) {
+  const res = await fetch(`${API}/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: request }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  return { status: res.status, ok: res.ok, body };
 }
 
 /**
@@ -50,7 +52,6 @@ export async function runGeminiFixer(prompt, editDir) {
   if (!key) return { code: 1, text: 'GEMINI_API_KEY is not set.', cost: null, stderr: '', written: [] };
   try {
     const files = sourceFiles(editDir);
-    const model = await pickModel(key);
     const request = `${prompt}
 
 You cannot run tools. Instead, here is every source file in the folder you may edit:
@@ -60,16 +61,17 @@ ${files.map(f => `=== FILE: ${f.path} ===\n${f.content}`).join('\n\n')}
 Answer with JSON only, in this shape:
 {"root_cause": "one or two sentences", "fix": "one or two sentences", "files": [{"path": "relative/path", "content": "the complete new file"}]}
 Only include files you changed, with their complete new content.`;
-    const res = await fetch(`${API}/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: request }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-      }),
-    });
-    const body = await res.json();
-    if (!res.ok) throw new Error(`Gemini ${res.status}: ${body.error?.message || 'request failed'}`);
+    const models = [...new Set([process.env.TZPROOF_GEMINI_MODEL, ...PREFERRED].filter(Boolean))];
+    let model;
+    let body;
+    let lastError = 'no model answered';
+    for (const m of models) {
+      const r = await generate(key, m, request);
+      if (r.ok) { model = m; body = r.body; break; }
+      lastError = `${m}: ${r.status} ${r.body.error?.message?.slice(0, 120) || ''}`;
+      if (![404, 429, 500, 503].includes(r.status)) break;
+    }
+    if (!body) throw new Error(`Gemini could not be reached (${lastError})`);
     const raw = body.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
     const answer = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ''));
     const written = [];
