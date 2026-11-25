@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { basename, dirname, extname, join, resolve } from 'node:path';
@@ -108,7 +108,25 @@ export function valuesRead(runEnd) {
   return { ...values, ...(runEnd?.final_state || {}) };
 }
 
-function runKane({ objective, endpoint, variables, maxSteps, timeout, ndjsonPath }) {
+/**
+ * Copy one screenshot out of a Kane evidence pack: the page as Kane saw it, just after it loaded.
+ * Needs `unzip`; returns null when it isn't available or the pack has no screenshots.
+ */
+export function extractScreenshot(pack, dest) {
+  if (!pack) return null;
+  const list = spawnSync('unzip', ['-Z1', pack], { encoding: 'utf8' });
+  if (list.status !== 0) return null;
+  const shots = list.stdout.split('\n').filter(f => /\/steps\/[^/]+\/screenshot\.(jpe?g|png)$/.test(f))
+    .sort((a, b) => Number(a.match(/steps\/(\d+)/)?.[1]) - Number(b.match(/steps\/(\d+)/)?.[1]));
+  const pick = shots[1] || shots[0];
+  if (!pick) return null;
+  const out = spawnSync('unzip', ['-p', pack, pick], { maxBuffer: 20 * 1024 * 1024 });
+  if (out.status !== 0 || !out.stdout?.length) return null;
+  writeFileSync(dest, out.stdout);
+  return dest;
+}
+
+function runKane({ objective, endpoint, variables, maxSteps, timeout, ndjsonPath, onStep = () => {} }) {
   return new Promise((resolvePromise) => {
     // A failed date check must not end the run: tzproof still needs every value Kane read.
     const args = ['run', objective, '--agent', '--cdp-endpoint', endpoint,
@@ -117,7 +135,19 @@ function runKane({ objective, endpoint, variables, maxSteps, timeout, ndjsonPath
     const child = spawn('kane-cli', args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => { stdout += d; });
+    let pendingLine = '';
+    child.stdout.on('data', (d) => {
+      stdout += d;
+      const lines = (pendingLine + d).split('\n');
+      pendingLine = lines.pop();
+      for (const line of lines) {
+        try {
+          const event = JSON.parse(line);
+          if (event.step !== undefined && event.remark) onStep(event);
+        }
+        catch { /* partial or non-JSON line */ }
+      }
+    });
     child.stderr.on('data', (d) => { stderr += d; });
     child.on('close', (exitCode) => {
       writeFileSync(ndjsonPath, stdout);
@@ -189,7 +219,7 @@ export async function serveFolder(folder) {
 /**
  * Run every cell and return the results object (also written to <outDir>/results.json).
  */
-export async function runGrid(config, { outDir, parallel = 2, headless = true, only, log = console.log } = {}) {
+export async function runGrid(config, { outDir, parallel = 2, headless = true, only, log = console.log, emit = () => {} } = {}) {
   const cells = planCells(config, { only });
   mkdirSync(join(outDir, 'cells'), { recursive: true });
 
@@ -208,6 +238,7 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
       const objective = withKaneAssertions(fill(cell.flow.objective, vars), cell, config).replace(/\s+/g, ' ').trim();
       const safeId = cell.id.replace(/[^\w.@-]+/g, '_');
       log(`… ${cell.id}  (${cell.clock.tz}, ${cell.clock.at})`);
+      emit('cell-start', { id: cell.id });
 
       if (config.before) {
         await runBefore(config.before, config.base, {
@@ -235,6 +266,7 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
             maxSteps: cell.flow.maxSteps || config.maxSteps || 25,
             timeout: cell.flow.timeout || config.timeout || 300,
             ndjsonPath: join(outDir, 'cells', `${safeId}${tries > 1 ? `.try${tries}` : ''}.ndjson`),
+            onStep: e => emit('cell-step', { id: cell.id, step: e.step, status: e.status, remark: e.remark }),
           });
         }
         finally {
@@ -249,6 +281,8 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
       } while (retry);
       const icon = { pass: '✓', fail: '✗', unknown: '?' }[verdict];
       log(`${icon} ${cell.id}  ${checks.map(c => c.reason || `${c.key} ok`).join('; ') || kane.stderrTail}`);
+      const shotName = `cells/${safeId}.jpg`;
+      const screenshot = extractScreenshot(kane.evidence, join(outDir, shotName)) ? shotName : null;
       results.push({
         id: cell.id,
         flow: cell.flow.id,
@@ -267,10 +301,12 @@ export async function runGrid(config, { outDir, parallel = 2, headless = true, o
           duration: kane.runEnd?.duration ?? Math.round((Date.now() - t0) / 1000),
           testUrl: kane.runEnd?.test_url ?? null,
           evidence: kane.evidence,
+          screenshot,
           steps: kane.steps.map(s => ({ step: s.step, status: s.status, remark: s.remark })),
           ndjson: `cells/${safeId}${tries > 1 ? `.try${tries}` : ''}.ndjson`,
         },
       });
+      emit('cell-done', results[results.length - 1]);
     }
   }
 

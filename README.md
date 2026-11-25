@@ -28,6 +28,18 @@ Real runs, committed in this repo with Kane's raw output:
 
 **Kane reads, code judges.** Kane is also asked to check each expected date itself. In both real grids its own check passed one wrong date (Tokyo in the first, London in the second); tzproof's comparison caught both. So the verdict always comes from code, using the values Kane read, and the report flags any cell where Kane's check disagrees.
 
+## tzproof Studio
+
+```bash
+node bin/tzproof.js ui examples/fix-loop/tzproof.yaml     # opens http://127.0.0.1:4321
+```
+
+Pick your app, what to check, and where and when (12 ready-made clocks: Tokyo at 8:30 AM, London after midnight in summer, New Year's Eve, a leap day, the night daylight saving starts…). Click **Run with Kane** and watch every cell fill in as Kane works. Click a cell for the screenshot Kane took at that clock, what the page showed, what it should have shown, and Kane's own steps; open it in Kane's evidence viewer. Click **Fix with Claude** and watch Claude Code's root cause and diff, then every clock again.
+
+![tzproof Studio: the grid after a run](docs/studio.png)
+
+![tzproof Studio: Fix with Claude, then every clock again](docs/studio-fix.png)
+
 ## Quickstart
 
 Requirements: Node 20+, Google Chrome, and Kane CLI signed in (free credits are enough).
@@ -71,6 +83,7 @@ fix:
 ## Commands
 
 ```text
+tzproof ui   [config]   tzproof Studio in your browser
 tzproof run  [config]   every flow at every clock → report.html, results.json, grid.evidence
 tzproof fix  [config]   run, hand failures to the coding agent, re-run the whole grid; up to 3 attempts
 tzproof hook [config]   Claude Code Stop hook: the agent can't finish while any cell fails

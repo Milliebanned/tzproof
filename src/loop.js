@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { renderReport } from './report.js';
-import { runGrid } from './runner.js';
+import { planCells, runGrid } from './runner.js';
 
 const SKIP = new Set(['node_modules', '.git', 'tzproof-runs']);
 
@@ -94,7 +94,7 @@ const DEFAULT_AGENT = ['claude', '-p', '--output-format', 'json', '--permission-
 /**
  * @returns {Promise<{ status: 'green' | 'handed-to-human', attempts: object[] }>}
  */
-export async function runLoop(config, { outDir, parallel, headless = true, maxAttempts = 3, log = console.log }) {
+export async function runLoop(config, { outDir, parallel, headless = true, maxAttempts = 3, log = console.log, emit = () => {}, startFrom = null }) {
   if (!config.fix?.edit) throw new Error('Add a "fix" section to the config: fix: { edit: ./path/the/agent/may/change }');
   const editDir = resolve(config.base, config.fix.edit);
   const agentCmd = config.fix.agent ? String(config.fix.agent).split(' ') : DEFAULT_AGENT;
@@ -105,13 +105,21 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
   const attempts = [];
   const grid = async (name) => {
     const dir = join(outDir, name);
-    const results = await runGrid(config, { outDir: dir, parallel, headless, log });
+    emit('grid-start', { name, cells: planCells(config).map(c => c.id) });
+    const results = await runGrid(config, { outDir: dir, parallel, headless, log, emit });
+    emit('grid-done', { name, summary: results.summary, evidence: results.evidence });
     writeFileSync(join(dir, 'report.html'), renderReport(results));
     return { dir: name, results };
   };
 
-  log('\n=== baseline run ===');
-  let current = await grid('0-baseline');
+  let current;
+  if (startFrom) {
+    current = { dir: startFrom.dir, results: startFrom.results };
+  }
+  else {
+    log('\n=== baseline run ===');
+    current = await grid('0-baseline');
+  }
   attempts.push({ attempt: 0, run: current.dir, summary: current.results.summary });
 
   for (let n = 1; n <= maxAttempts && current.results.summary.fail > 0; n++) {
@@ -122,6 +130,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
 
     const prompt = buildPrompt(current.results, editDir, protectedNote);
     writeFileSync(join(outDir, `attempt-${n}-prompt.md`), prompt);
+    emit('agent-start', { attempt: n, failing: current.results.summary.fail });
     const agent = await runAgent(prompt, editDir, agentCmd);
     log(`agent: ${agent.text.replace(/\s+/g, ' ').slice(0, 300)}`);
 
@@ -134,6 +143,7 @@ export async function runLoop(config, { outDir, parallel, headless = true, maxAt
       .replaceAll(`a${before}`, 'a').replaceAll(`b${editDir}`, 'b').replaceAll(before, '').replaceAll(editDir, '');
     writeFileSync(join(outDir, `attempt-${n}.diff`), diff);
 
+    emit('agent-done', { attempt: n, text: agent.text, cost: agent.cost, diff, rejected: tampered.length > 0, tampered });
     if (tampered.length) {
       log(`✗ rejected: the agent changed protected files: ${tampered.join(', ')}`);
       spawnSync('git', ['checkout', '--', ...tampered], { cwd: protectedRoot });

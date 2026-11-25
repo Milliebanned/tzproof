@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tzproof Studio</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">tz</span>proof <span class="muted">Studio</span></div>
+  <div class="topbar-right">
+    <span id="balance" class="pill muted">Kane credits …</span>
+    <a class="muted" href="https://github.com/Milliebanned/tzproof" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="setup">
+    <section class="card">
+      <h2><span class="step">1</span> Your app</h2>
+      <label>App URL
+        <input id="app" placeholder="http://localhost:3000" autocomplete="off">
+      </label>
+      <p class="hint" id="serve-hint" hidden></p>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span> What to check</h2>
+      <div id="flows"></div>
+      <button class="ghost" id="add-flow" type="button">+ Add a check</button>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span> Where and when</h2>
+      <p class="hint">Kane opens your app in a Chrome that believes it is in this place, at this moment.</p>
+      <div id="presets" class="presets"></div>
+      <details class="custom">
+        <summary>Add your own</summary>
+        <div class="row">
+          <input id="custom-tz" placeholder="Europe/Paris" list="tz-list">
+          <input id="custom-at" type="datetime-local">
+        </div>
+        <button class="ghost" id="add-custom" type="button">Add clock</button>
+        <datalist id="tz-list"></datalist>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">4</span> Run</h2>
+      <div class="row">
+        <label class="inline">Run at once
+          <select id="parallel"><option>1</option><option selected>2</option><option>3</option></select>
+        </label>
+        <span id="estimate" class="hint"></span>
+      </div>
+      <button id="run" class="primary" type="button">Run with Kane</button>
+      <p id="setup-error" class="error" hidden></p>
+    </section>
+  </aside>
+
+  <section class="results">
+    <div id="empty" class="empty">
+      <h1>Is your app right in every time zone, on every date?</h1>
+      <p>Pick your app, what to check, and where and when. Kane CLI uses your app in a real Chrome at each clock and reads the dates it shows. tzproof works out what each date should be and compares.</p>
+      <ol>
+        <li><strong>Kane reads the page.</strong> A real browser, at each place and time.</li>
+        <li><strong>Code judges the date.</strong> Kane's "passed" is not enough: it missed a wrong date in 1 of 5 cells in our runs.</li>
+        <li><strong>Claude fixes it.</strong> It gets Kane's evidence, edits only your app, and every clock runs again.</li>
+      </ol>
+    </div>
+
+    <div id="board" hidden>
+      <div class="board-head">
+        <div>
+          <h2 id="board-title">Grid</h2>
+          <div id="summary" class="summary"></div>
+        </div>
+        <div class="board-actions">
+          <a id="report-link" class="ghost-link" target="_blank" hidden>Report ↗</a>
+          <button id="open-pack" class="ghost" type="button" hidden>Open grid in Kane's evidence viewer</button>
+        </div>
+      </div>
+      <div class="grid-wrap"><table id="grid" class="grid"></table></div>
+      <div id="policy" class="policy" hidden></div>
+
+      <section id="fix-box" class="card fix" hidden>
+        <h2>Fix with Claude</h2>
+        <p class="hint">Claude Code gets each failing cell with Kane's evidence. It may edit only the folder below, with no shell. If it touches anything else, the change is undone. Then every clock runs again, up to 3 times.</p>
+        <div class="row">
+          <input id="fix-edit" placeholder="Folder Claude may edit, e.g. ./src">
+          <button id="fix" class="primary" type="button">Fix with Claude</button>
+        </div>
+        <p id="fix-error" class="error" hidden></p>
+      </section>
+
+      <div id="timeline" class="timeline"></div>
+    </div>
+  </section>
+</main>
+
+<aside id="drawer" class="drawer" hidden>
+  <div class="drawer-head">
+    <div>
+      <div id="d-title" class="d-title"></div>
+      <div id="d-sub" class="muted"></div>
+    </div>
+    <button id="d-close" class="ghost" type="button" aria-label="Close">✕</button>
+  </div>
+  <div id="d-body"></div>
+</aside>
+<div id="scrim" class="scrim" hidden></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

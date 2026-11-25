@@ -1,14 +1,17 @@
 #!/usr/bin/env node
+import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { renderReport } from '../src/report.js';
 import { runStopHook } from '../src/hook.js';
 import { runLoop } from '../src/loop.js';
+import { startStudio } from '../src/studio.js';
 import { loadConfig, planCells, runGrid } from '../src/runner.js';
 
 const HELP = `tzproof — test your web app at every clock and time zone with Kane CLI
 
 Usage:
+  tzproof ui [config]       Open tzproof Studio in your browser (http://127.0.0.1:4321)
   tzproof run [config]      Run every flow at every clock (default config: tzproof.yaml)
   tzproof fix [config]      Run, hand failures to your coding agent, re-run the whole grid; repeat until green
   tzproof hook [config]     Claude Code Stop hook: block "done" while any cell fails (reads hook JSON on stdin)
@@ -32,6 +35,8 @@ function parseArgs(argv) {
     else if (a === '--parallel') args.parallel = Number(argv[++i]);
     else if (a === '--only') args.only.push(argv[++i]);
     else if (a === '--headed') args.headed = true;
+    else if (a === '--port') args.port = Number(argv[++i]);
+    else if (a === '--no-open') args.noOpen = true;
     else if (a === '--max-attempts') args.maxAttempts = Number(argv[++i]);
     else if (a === '-h' || a === '--help') args.help = true;
     else args._.push(a);
@@ -70,6 +75,16 @@ async function main() {
     console.log(`\n${pass} pass · ${fail} fail · ${unknown} unknown`);
     console.log(`report: ${join(outDir, 'report.html')}`);
     return fail ? 1 : unknown ? 2 : 0;
+  }
+
+  if (command === 'ui') {
+    const studio = await startStudio({ configPath: target, port: args.port || 4321 });
+    console.log(`tzproof Studio: ${studio.url}  (Ctrl+C to stop)`);
+    if (!args.noOpen) {
+      const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+      spawn(opener, [studio.url], { stdio: 'ignore', shell: process.platform === 'win32', detached: true }).unref();
+    }
+    await new Promise(() => {});
   }
 
   if (command === 'fix') {
